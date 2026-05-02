@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+
+# Custom rounds are production data — not committed
+server/custom-rounds.json
+
+# OS
+.DS_Store
+Thumbs.db

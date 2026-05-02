@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-answer {
+    @apply relative w-full flex items-center gap-3 p-4 rounded-2xl text-left text-white font-bold
+           text-lg sm:text-xl shadow-lg active:scale-95 transition-all duration-150 select-none
+           cursor-pointer border-b-4 min-h-[72px] sm:min-h-[80px];
+  }
+
+  .btn-answer:disabled {
+    @apply cursor-not-allowed;
+  }
+
+  .answer-label {
+    @apply flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+           font-display text-2xl bg-white/20;
+  }
+
+  .card {
+    @apply bg-white rounded-3xl shadow-xl p-6;
+  }
+
+  .btn-primary {
+    @apply bg-purple-600 hover:bg-purple-700 active:bg-purple-800
+           text-white font-bold py-5 px-8 rounded-2xl text-2xl
+           shadow-lg shadow-purple-500/40 active:scale-95
+           transition-all duration-150 select-none
+           border-b-4 border-purple-800 w-full;
+  }
+
+  .btn-secondary {
+    @apply bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700
+           text-white font-bold py-4 px-6 rounded-2xl text-xl
+           shadow-lg active:scale-95 transition-all duration-150
+           border-b-4 border-indigo-700 w-full;
+  }
+
+  .btn-green {
+    @apply bg-green-500 hover:bg-green-600 active:bg-green-700
+           text-white font-bold py-5 px-8 rounded-2xl text-2xl
+           shadow-lg shadow-green-500/40 active:scale-95
+           transition-all duration-150 select-none
+           border-b-4 border-green-700 w-full;
+  }
+
+  .screen {
+    @apply min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-purple-800
+           flex flex-col items-center justify-center p-4;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .game-screen {
+    @apply min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-purple-800
+           flex flex-col p-3 gap-3;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Confetti animation */
+@keyframes confetti-fall {
+  0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-piece {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  animation: confetti-fall linear forwards;
+  z-index: 9999;
+}
+
+/* Timer ring */
+@keyframes timer-drain {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 283; }
+}
+
+.timer-ring-circle {
+  stroke-dasharray: 283;
+  stroke-dashoffset: 0;
+  transform-origin: center;
+  transform: rotate(-90deg);
+}
