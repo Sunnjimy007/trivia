@@ -38,6 +38,7 @@ export interface GameRoom {
   timeLimit: number;
   questionTimer: ReturnType<typeof setTimeout> | null;
   correctAnswerOrder: number;
+  adjustedPlayerIds: Set<string>;
 }
 
 export interface QuestionForClient {

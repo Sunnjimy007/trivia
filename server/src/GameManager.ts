@@ -96,6 +96,7 @@ class GameManager {
       timeLimit: QUESTION_TIME_LIMIT,
       questionTimer: null,
       correctAnswerOrder: 0,
+      adjustedPlayerIds: new Set(),
     };
 
     this.rooms.set(roomCode, room);
@@ -136,6 +137,7 @@ class GameManager {
     room.phase = 'round_intro';
     room.currentRoundIndex = 0;
     room.currentQuestionIndex = 0;
+    room.adjustedPlayerIds = new Set();
 
     const rounds = this.getRounds();
     this.onRoomUpdate(roomCode, 'round-intro', {
@@ -305,6 +307,7 @@ class GameManager {
       room.currentRoundIndex++;
       room.currentQuestionIndex = 0;
       room.phase = 'round_intro';
+      room.adjustedPlayerIds = new Set();
 
       this.onRoomUpdate(room.roomCode, 'round-intro', {
         round: getRoundForClient(rounds, room.currentRoundIndex),
@@ -320,8 +323,10 @@ class GameManager {
     if (!room || room.hostId !== hostId) return false;
     const player = room.players.find((p) => p.id === playerId);
     if (!player) return false;
+    if (room.adjustedPlayerIds.has(playerId)) return false;
 
     player.score = Math.max(0, player.score + amount);
+    room.adjustedPlayerIds.add(playerId);
 
     this.onRoomUpdate(roomCode, 'score-adjusted', {
       playerId,
@@ -330,6 +335,7 @@ class GameManager {
       amount,
       newScore: player.score,
       scores: getSortedScores(room.players),
+      adjustedPlayerIds: [...room.adjustedPlayerIds],
     });
 
     return true;

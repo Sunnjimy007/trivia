@@ -26,6 +26,7 @@ interface AppState {
   answeredCount: number;
   answerDistribution: Record<string, number>;
   lastAdjustment: { playerName: string; avatar: string; amount: number } | null;
+  adjustedPlayerIds: string[];
 }
 
 const initialGame: GameState = {
@@ -57,6 +58,7 @@ const initialState: AppState = {
   answeredCount: 0,
   answerDistribution: { A: 0, B: 0, C: 0, D: 0 },
   lastAdjustment: null,
+  adjustedPlayerIds: [],
 };
 
 type Action =
@@ -74,7 +76,7 @@ type Action =
   | { type: 'ROUND_SUMMARY'; roundIndex: number; round: RoundInfo; scores: PlayerScore[]; isLastRound: boolean }
   | { type: 'GAME_OVER'; scores: PlayerScore[] }
   | { type: 'PLAYER_DISCONNECTED'; playerId: string; players: Player[] }
-  | { type: 'SCORE_ADJUSTED'; playerName: string; avatar: string; amount: number; scores: PlayerScore[] }
+  | { type: 'SCORE_ADJUSTED'; playerId: string; playerName: string; avatar: string; amount: number; scores: PlayerScore[] }
   | { type: 'RESET' };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -127,6 +129,7 @@ function reducer(state: AppState, action: Action): AppState {
         myAnswer: null,
         answeredCount: 0,
         answerDistribution: { A: 0, B: 0, C: 0, D: 0 },
+        adjustedPlayerIds: [],
         game: {
           ...state.game,
           phase: 'round_intro',
@@ -209,6 +212,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SCORE_ADJUSTED':
       return {
         ...state,
+        adjustedPlayerIds: [...state.adjustedPlayerIds, action.playerId],
         lastAdjustment: { playerName: action.playerName, avatar: action.avatar, amount: action.amount },
         game: { ...state.game, scores: action.scores },
       };
@@ -302,7 +306,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'PLAYER_DISCONNECTED', ...data });
     });
 
-    socket.on('score-adjusted', (data: { playerName: string; avatar: string; amount: number; scores: PlayerScore[] }) => {
+    socket.on('score-adjusted', (data: { playerId: string; playerName: string; avatar: string; amount: number; scores: PlayerScore[] }) => {
       dispatch({ type: 'SCORE_ADJUSTED', ...data });
     });
 

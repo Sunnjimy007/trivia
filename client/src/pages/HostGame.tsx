@@ -15,9 +15,11 @@ const OPTION_STYLES = [
 function BonusRow({
   p,
   onAdjust,
+  isAdjusted,
 }: {
   p: PlayerScore;
   onAdjust: (id: string, amt: number) => void;
+  isAdjusted: boolean;
 }) {
   return (
     <div className="bg-gray-800 rounded-2xl p-3 flex flex-col gap-2">
@@ -28,23 +30,32 @@ function BonusRow({
         <span className="text-amber-300 font-display text-lg flex-shrink-0">
           {p.score.toLocaleString()} pts
         </span>
+        {isAdjusted && (
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wide flex-shrink-0">Done</span>
+        )}
       </div>
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => onAdjust(p.playerId, -100)}
-          className="flex items-center justify-center gap-1.5 bg-red-600 hover:bg-red-500
-                     active:bg-red-700 active:scale-95 text-white font-bold text-base
-                     py-2.5 rounded-xl transition-all touch-manipulation border-b-2 border-red-800"
+          disabled={isAdjusted}
+          className={`flex items-center justify-center gap-1.5 text-white font-bold text-base
+                     py-2.5 rounded-xl transition-all touch-manipulation border-b-2
+                     ${isAdjusted
+                       ? 'bg-gray-600 border-gray-700 opacity-40 cursor-not-allowed'
+                       : 'bg-red-600 hover:bg-red-500 active:bg-red-700 active:scale-95 border-red-800'}`}
         >
           <span className="text-lg">−</span>
           <span>100 pts</span>
         </button>
         <button
           onClick={() => onAdjust(p.playerId, 100)}
-          className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500
-                     active:bg-green-700 active:scale-95 text-white font-bold text-base
-                     py-2.5 rounded-xl transition-all touch-manipulation border-b-2 border-green-800"
+          disabled={isAdjusted}
+          className={`flex items-center justify-center gap-1.5 text-white font-bold text-base
+                     py-2.5 rounded-xl transition-all touch-manipulation border-b-2
+                     ${isAdjusted
+                       ? 'bg-gray-600 border-gray-700 opacity-40 cursor-not-allowed'
+                       : 'bg-green-600 hover:bg-green-500 active:bg-green-700 active:scale-95 border-green-800'}`}
         >
           <span className="text-lg">+</span>
           <span>100 pts</span>
@@ -58,9 +69,11 @@ function BonusRow({
 function LeaderboardSidebar({
   scores,
   onAdjust,
+  adjustedIds,
 }: {
   scores: PlayerScore[];
   onAdjust: (id: string, amt: number) => void;
+  adjustedIds: string[];
 }) {
   const RANK_ICONS = ['🥇', '🥈', '🥉'];
   return (
@@ -72,42 +85,54 @@ function LeaderboardSidebar({
         </p>
       </div>
 
-      {scores.map((p, i) => (
-        <div key={p.playerId} className="bg-gray-800/80 rounded-2xl p-2.5 flex flex-col gap-2">
-          {/* Rank + name + score */}
-          <div className="flex items-center gap-2">
-            <span className="text-base w-6 text-center flex-shrink-0">
-              {RANK_ICONS[i] ?? `${i + 1}`}
-            </span>
-            <span className="text-xl flex-shrink-0">{p.avatar}</span>
-            <span className="flex-1 text-white font-bold text-sm truncate">{p.playerName}</span>
-            <span className="text-amber-300 font-display text-sm flex-shrink-0">
-              {p.score.toLocaleString()}
-            </span>
+      {scores.map((p, i) => {
+        const isAdjusted = adjustedIds.includes(p.playerId);
+        return (
+          <div key={p.playerId} className="bg-gray-800/80 rounded-2xl p-2.5 flex flex-col gap-2">
+            {/* Rank + name + score */}
+            <div className="flex items-center gap-2">
+              <span className="text-base w-6 text-center flex-shrink-0">
+                {RANK_ICONS[i] ?? `${i + 1}`}
+              </span>
+              <span className="text-xl flex-shrink-0">{p.avatar}</span>
+              <span className="flex-1 text-white font-bold text-sm truncate">{p.playerName}</span>
+              <span className="text-amber-300 font-display text-sm flex-shrink-0">
+                {p.score.toLocaleString()}
+              </span>
+              {isAdjusted && (
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide flex-shrink-0">Done</span>
+              )}
+            </div>
+            {/* Bonus / penalty buttons */}
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                onClick={() => onAdjust(p.playerId, -100)}
+                disabled={isAdjusted}
+                className={`flex items-center justify-center gap-1 text-white font-bold text-xs
+                           py-2 rounded-lg transition-all touch-manipulation border-b-2
+                           ${isAdjusted
+                             ? 'bg-gray-600 border-gray-700 opacity-40 cursor-not-allowed'
+                             : 'bg-red-600 hover:bg-red-500 active:bg-red-700 active:scale-95 border-red-800'}`}
+                title={`Remove 100 pts from ${p.playerName}`}
+              >
+                <span>−</span><span>100 pts</span>
+              </button>
+              <button
+                onClick={() => onAdjust(p.playerId, 100)}
+                disabled={isAdjusted}
+                className={`flex items-center justify-center gap-1 text-white font-bold text-xs
+                           py-2 rounded-lg transition-all touch-manipulation border-b-2
+                           ${isAdjusted
+                             ? 'bg-gray-600 border-gray-700 opacity-40 cursor-not-allowed'
+                             : 'bg-green-600 hover:bg-green-500 active:bg-green-700 active:scale-95 border-green-800'}`}
+                title={`Give 100 pts to ${p.playerName}`}
+              >
+                <span>+</span><span>100 pts</span>
+              </button>
+            </div>
           </div>
-          {/* Bonus / penalty buttons — solid, clearly labelled */}
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              onClick={() => onAdjust(p.playerId, -100)}
-              className="flex items-center justify-center gap-1 bg-red-600 hover:bg-red-500
-                         active:bg-red-700 active:scale-95 text-white font-bold text-xs
-                         py-2 rounded-lg transition-all touch-manipulation border-b-2 border-red-800"
-              title={`Remove 100 pts from ${p.playerName}`}
-            >
-              <span>−</span><span>100 pts</span>
-            </button>
-            <button
-              onClick={() => onAdjust(p.playerId, 100)}
-              className="flex items-center justify-center gap-1 bg-green-600 hover:bg-green-500
-                         active:bg-green-700 active:scale-95 text-white font-bold text-xs
-                         py-2 rounded-lg transition-all touch-manipulation border-b-2 border-green-800"
-              title={`Give 100 pts to ${p.playerName}`}
-            >
-              <span>+</span><span>100 pts</span>
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -150,7 +175,7 @@ function AdjustmentToast({
 // ── Host wrapper ──────────────────────────────────────────────────────────────
 export default function HostGame() {
   const { state, advance, adjustScore } = useGame();
-  const { game, players, answeredCount, answerDistribution, myName, lastAdjustment } = state;
+  const { game, players, answeredCount, answerDistribution, myName, lastAdjustment, adjustedPlayerIds } = state;
 
   // ── Round Intro ─────────────────────────────────────────────────────────
   if (game.phase === 'round_intro') {
@@ -197,7 +222,7 @@ export default function HostGame() {
             </p>
             <div className="flex flex-col gap-3">
               {game.scores.map((p) => (
-                <BonusRow key={p.playerId} p={p} onAdjust={adjustScore} />
+                <BonusRow key={p.playerId} p={p} onAdjust={adjustScore} isAdjusted={adjustedPlayerIds.includes(p.playerId)} />
               ))}
             </div>
           </div>
@@ -316,7 +341,7 @@ export default function HostGame() {
 
             {/* RIGHT: leaderboard + bonus — full width below on mobile */}
             <div className="lg:w-72 xl:w-80 flex-shrink-0 lg:overflow-y-auto lg:min-h-0">
-              <LeaderboardSidebar scores={game.scores} onAdjust={adjustScore} />
+              <LeaderboardSidebar scores={game.scores} onAdjust={adjustScore} adjustedIds={adjustedPlayerIds} />
             </div>
           </div>
         </div>
@@ -436,7 +461,7 @@ export default function HostGame() {
 
             {/* RIGHT: leaderboard + bonus — ALWAYS visible, full width below on mobile */}
             <div className="lg:w-72 xl:w-80 flex-shrink-0 lg:overflow-y-auto lg:min-h-0">
-              <LeaderboardSidebar scores={game.scores} onAdjust={adjustScore} />
+              <LeaderboardSidebar scores={game.scores} onAdjust={adjustScore} adjustedIds={adjustedPlayerIds} />
             </div>
           </div>
         </div>
@@ -520,7 +545,7 @@ export default function HostGame() {
           </p>
           <div className="flex flex-col gap-3">
             {game.scores.map((p) => (
-              <BonusRow key={p.playerId} p={p} onAdjust={adjustScore} />
+              <BonusRow key={p.playerId} p={p} onAdjust={adjustScore} isAdjusted={adjustedPlayerIds.includes(p.playerId)} />
             ))}
           </div>
         </div>

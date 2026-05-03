@@ -1,7 +1,42 @@
+import { useState, useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import Scoreboard from '../components/Scoreboard';
 import Timer from '../components/Timer';
 import Confetti from '../components/Confetti';
+
+function AdjustmentToast({
+  adjustment,
+}: {
+  adjustment: { playerName: string; avatar: string; amount: number } | null;
+}) {
+  const [visible, setVisible] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!adjustment) return;
+    setVisible(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setVisible(false), 3000);
+  }, [adjustment]);
+
+  if (!visible || !adjustment) return null;
+  const isBonus = adjustment.amount > 0;
+  return (
+    <div
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3
+                  px-5 py-3 rounded-2xl shadow-2xl border-2 animate-bounce-in
+                  ${isBonus ? 'bg-green-900 border-green-500' : 'bg-red-900 border-red-500'}`}
+    >
+      <span className="text-2xl sm:text-3xl">{adjustment.avatar}</span>
+      <div>
+        <p className="font-bold text-white text-base">{adjustment.playerName}</p>
+        <p className={`font-display text-xl ${isBonus ? 'text-green-300' : 'text-red-300'}`}>
+          {isBonus ? '+100 pts bonus! 🎉' : '−100 pts 😬'}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const OPTION_COLORS = [
   { base: 'bg-rose-500 border-rose-700' },
@@ -12,16 +47,28 @@ const OPTION_COLORS = [
 
 export default function PlayerGame() {
   const { state, submitAnswer } = useGame();
-  const { game, myId, myAnswer } = state;
+  const { game, myId, myAnswer, lastAdjustment } = state;
 
   const myAnswerResult = game.answers.find((a) => a.playerId === myId);
   const myPoints = myAnswerResult?.pointsEarned ?? 0;
+  const myScore = game.scores.find((s) => s.playerId === myId);
+  const myCurrentScore = myScore?.score ?? 0;
+
+  const ScorePill = () => (
+    <div className="bg-white/15 rounded-xl px-3 py-1.5 text-white font-bold text-sm flex-shrink-0">
+      {myCurrentScore.toLocaleString()} pts
+    </div>
+  );
 
   // ── Round intro ──────────────────────────────────────────────────────────
   if (game.phase === 'round_intro') {
     return (
       <div className="screen">
+        <AdjustmentToast adjustment={lastAdjustment} />
         <div className="w-full max-w-sm flex flex-col items-center gap-5 animate-bounce-in px-2">
+          <div className="w-full flex justify-end">
+            <ScorePill />
+          </div>
           <div className="text-7xl sm:text-8xl">{game.currentRound?.emoji}</div>
           <div className="text-center">
             <div className="bg-white/20 text-white text-xs font-bold uppercase tracking-widest
@@ -52,11 +99,13 @@ export default function PlayerGame() {
 
     return (
       <div className="game-screen">
+        <AdjustmentToast adjustment={lastAdjustment} />
         {/* Top bar */}
         <div className="flex items-center justify-between gap-2 flex-shrink-0">
           <div className="bg-white/15 rounded-xl px-3 py-2 text-white font-bold text-sm sm:text-base flex-1 min-w-0 truncate">
             {game.currentRound?.emoji} Q{game.questionIndex + 1}/{game.totalQuestions}
           </div>
+          <ScorePill />
           <Timer startTime={game.questionStartTime} timeLimit={game.timeLimit} />
         </div>
 
@@ -117,6 +166,7 @@ export default function PlayerGame() {
 
     return (
       <div className="game-screen overflow-y-auto">
+        <AdjustmentToast adjustment={lastAdjustment} />
         {/* Result banner */}
         <div
           className={`card flex-shrink-0 text-center py-5 animate-bounce-in
@@ -181,13 +231,15 @@ export default function PlayerGame() {
     const myRank = game.scores.find((s) => s.playerId === myId)?.rank ?? 0;
     return (
       <div className="screen overflow-y-auto">
+        <AdjustmentToast adjustment={lastAdjustment} />
         <div className="w-full max-w-sm flex flex-col gap-4 animate-slide-up py-4">
           <div className="text-center">
             <div className="text-5xl mb-2">{game.currentRound?.emoji}</div>
             <h2 className="font-display text-4xl text-white">Round Complete!</h2>
             <p className="text-white/70 text-lg mt-1">You're #{myRank} 🏆</p>
+            <p className="text-amber-300 font-display text-2xl mt-1">{myCurrentScore.toLocaleString()} pts</p>
           </div>
-          <div className="card">
+          <div className="bg-white/10 rounded-3xl p-6">
             <Scoreboard scores={game.scores} highlightId={myId} />
           </div>
           <div className="card text-center py-3">
@@ -205,11 +257,11 @@ export default function PlayerGame() {
 
   // ── Game over ────────────────────────────────────────────────────────────
   if (game.phase === 'game_over') {
-    const myScore = game.scores.find((s) => s.playerId === myId);
     const isWinner = myScore?.rank === 1;
 
     return (
       <div className="screen overflow-y-auto">
+        <AdjustmentToast adjustment={lastAdjustment} />
         {isWinner && <Confetti />}
         <div className="w-full max-w-sm flex flex-col gap-4 animate-bounce-in relative z-10 py-4">
           <div className="text-center">
@@ -223,8 +275,8 @@ export default function PlayerGame() {
               </div>
             )}
           </div>
-          <div className="card">
-            <h3 className="font-bold text-gray-700 text-base mb-3 text-center">Final Scores</h3>
+          <div className="bg-white/10 rounded-3xl p-6">
+            <h3 className="font-bold text-white text-base mb-3 text-center">Final Scores</h3>
             <Scoreboard scores={game.scores} highlightId={myId} />
           </div>
           <button onClick={() => window.location.reload()} className="btn-secondary text-xl py-5">
