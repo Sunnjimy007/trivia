@@ -162,12 +162,11 @@ function AdjustmentToast({
                   ${isBonus ? 'bg-green-900 border-green-500' : 'bg-red-900 border-red-500'}`}
     >
       <span className="text-2xl sm:text-3xl">{adjustment.avatar}</span>
-      <div>
-        <p className="font-bold text-white text-base">{adjustment.playerName}</p>
-        <p className={`font-display text-xl ${isBonus ? 'text-green-300' : 'text-red-300'}`}>
-          {isBonus ? '+100 pts 🎉' : '−100 pts 😬'}
-        </p>
-      </div>
+      <p className={`font-bold text-base ${isBonus ? 'text-green-200' : 'text-red-200'}`}>
+        {isBonus
+          ? `${adjustment.playerName} just received 100 bonus points! 🎉`
+          : `${adjustment.playerName} just lost 100 pts 😬`}
+      </p>
     </div>
   );
 }
