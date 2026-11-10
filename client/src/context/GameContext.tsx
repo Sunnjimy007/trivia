@@ -7,13 +7,70 @@ import type {
   PlayerAnswer,
   PlayerScore,
   Question,
+  RoomSnapshot,
   RoundInfo,
 } from '../types';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '';
 
+// ── Remembering our seat so a refresh or dropped connection can rejoin ────────
+// The server hands each browser a secret token when it creates/joins a game. We keep it in
+// sessionStorage (this tab) and localStorage (so a relaunched phone app / new tab can still resume).
+const SESSION_KEY = 'trivia-session';
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;   // a game never lasts this long
+const FINISHED_TTL_MS = 10 * 60 * 1000;       // after game over, only keep it briefly
+
+interface StoredSession {
+  roomCode: string;
+  token: string;
+  role: 'host' | 'player';
+  expiresAt: number;
+}
+
+function readSession(storage: Storage): StoredSession | null {
+  try {
+    const raw = storage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as StoredSession;
+    if (typeof s?.roomCode !== 'string' || typeof s?.token !== 'string' || typeof s?.expiresAt !== 'number') return null;
+    if (s.expiresAt < Date.now()) return null;
+    return s;
+  } catch {
+    return null; // storage unavailable (private mode, blocked) or corrupt
+  }
+}
+
+// The seed of this very tab (survives a refresh). Safe to resume automatically.
+function loadTabSession(): StoredSession | null {
+  try { return readSession(sessionStorage); } catch { return null; }
+}
+
+// The last game this device was in. A *new* tab or a relaunched app finds this, but must ask first,
+// because taking the seat over would silently kick the tab that is still playing.
+function loadDeviceSession(): StoredSession | null {
+  try { return readSession(localStorage); } catch { return null; }
+}
+
+function saveSession(s: Omit<StoredSession, 'expiresAt'>, ttlMs = SESSION_TTL_MS) {
+  const value = JSON.stringify({ ...s, expiresAt: Date.now() + ttlMs });
+  try { sessionStorage.setItem(SESSION_KEY, value); } catch { /* ignore */ }
+  try { localStorage.setItem(SESSION_KEY, value); } catch { /* ignore */ }
+}
+
+function clearSession() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+}
+
 interface AppState {
   socket: Socket | null;
+  connection: 'connecting' | 'online' | 'offline';
+  // True while we are trying to get back into this tab's game (page just loaded / refreshed).
+  restoring: boolean;
+  // A game from this device that a different tab was in: we ask before rejoining it.
+  resumeOffer: { roomCode: string; role: 'host' | 'player' } | null;
+  hostConnected: boolean;
+  notice: string | null;
   view: AppView;
   myId: string;
   myName: string;
@@ -46,6 +103,15 @@ const initialGame: GameState = {
 
 const initialState: AppState = {
   socket: null,
+  connection: 'connecting',
+  restoring: loadTabSession() !== null,
+  resumeOffer: (() => {
+    if (loadTabSession()) return null;
+    const s = loadDeviceSession();
+    return s ? { roomCode: s.roomCode, role: s.role } : null;
+  })(),
+  hostConnected: true,
+  notice: null,
   view: 'home',
   myId: '',
   myName: '',
@@ -63,6 +129,14 @@ const initialState: AppState = {
 
 type Action =
   | { type: 'SET_SOCKET'; socket: Socket }
+  | { type: 'SET_CONNECTION'; connection: AppState['connection'] }
+  | { type: 'HOST_CONNECTION'; connected: boolean }
+  | { type: 'REJOINED'; snapshot: RoomSnapshot }
+  | { type: 'RESTORE_FAILED' }
+  | { type: 'ACCEPT_RESUME' }
+  | { type: 'DECLINE_RESUME' }
+  | { type: 'PLAYERS_UPDATED'; players: Player[]; scores: PlayerScore[]; adjustedPlayerIds: string[] }
+  | { type: 'CLEAR_NOTICE' }
   | { type: 'SET_VIEW'; view: AppView }
   | { type: 'SET_ERROR'; error: string | null }
   | { type: 'GAME_CREATED'; roomCode: string; players: Player[]; myId: string; myName: string }
@@ -83,6 +157,82 @@ function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'SET_SOCKET':
       return { ...state, socket: action.socket };
+
+    case 'SET_CONNECTION':
+      return { ...state, connection: action.connection };
+
+    case 'HOST_CONNECTION':
+      return { ...state, hostConnected: action.connected };
+
+    case 'CLEAR_NOTICE':
+      return { ...state, notice: null };
+
+    case 'ACCEPT_RESUME':
+      return { ...state, resumeOffer: null, restoring: true };
+
+    case 'DECLINE_RESUME':
+      return { ...state, resumeOffer: null };
+
+    // The server restored our seat: redraw whatever phase the game is in right now.
+    case 'REJOINED': {
+      const s = action.snapshot;
+      const inLobby = s.phase === 'lobby';
+      return {
+        ...state,
+        view: s.isHost ? (inLobby ? 'host_lobby' : 'host_game') : (inLobby ? 'player_lobby' : 'player_game'),
+        restoring: false,
+        notice: null,
+        error: null,
+        isHost: s.isHost,
+        myId: s.myId,
+        myName: s.myName,
+        roomCode: s.roomCode,
+        players: s.players,
+        hostConnected: s.hostConnected,
+        myAnswer: s.myAnswer,
+        answeredCount: s.answeredCount,
+        answerDistribution: s.distribution,
+        adjustedPlayerIds: s.adjustedPlayerIds,
+        lastAdjustment: null,
+        game: {
+          phase: s.phase,
+          roomCode: s.roomCode,
+          players: s.players,
+          currentRound: s.round,
+          roundIndex: s.roundIndex,
+          totalRounds: s.totalRounds || initialGame.totalRounds,
+          currentQuestion: s.question,
+          questionIndex: s.questionIndex,
+          totalQuestions: s.totalQuestions,
+          questionStartTime: s.questionStartTime,
+          timeLimit: s.timeLimit,
+          answers: s.answers,
+          correctOptionId: s.correctOptionId,
+          scores: s.scores,
+          isLastRound: s.isLastRound,
+        },
+      };
+    }
+
+    // The saved game is gone (it ended, or the server restarted): go back to a clean home screen.
+    case 'RESTORE_FAILED':
+      return {
+        ...initialState,
+        socket: state.socket,
+        connection: state.connection,
+        restoring: false,
+        resumeOffer: null,
+        notice: state.view !== 'home' ? 'That game has ended.' : null,
+      };
+
+    // Someone's seat moved to a new connection, so their id (and the leaderboard entries) changed.
+    case 'PLAYERS_UPDATED':
+      return {
+        ...state,
+        players: action.players,
+        adjustedPlayerIds: action.adjustedPlayerIds,
+        game: { ...state.game, players: action.players, scores: action.scores },
+      };
 
     case 'SET_VIEW':
       return { ...state, view: action.view };
@@ -218,7 +368,7 @@ function reducer(state: AppState, action: Action): AppState {
       };
 
     case 'RESET':
-      return { ...initialState, socket: state.socket };
+      return { ...initialState, socket: state.socket, connection: state.connection, restoring: false, resumeOffer: null };
 
     default:
       return state;
@@ -234,6 +384,12 @@ interface GameContextValue {
   submitAnswer: (optionId: string) => void;
   adjustScore: (playerId: string, amount: number) => void;
   resetGame: () => void;
+  // Forget the saved seat and start over from the home screen (used by "Play Again" / "Leave game").
+  leaveGame: () => void;
+  // Answer the "welcome back" question shown when a new tab finds a game this device was in.
+  resumeGame: () => void;
+  declineResume: () => void;
+  clearNotice: () => void;
   setError: (error: string | null) => void;
 }
 
@@ -245,7 +401,37 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const socket = io(SOCKET_URL, { autoConnect: true });
 
-    socket.on('game-created', (data: { roomCode: string; hostName: string; players: Player[] }) => {
+    // (Re)connected, including after a refresh or a dropped connection. If this browser was in a
+    // game, ask the server to give it its seat back.
+    socket.on('connect', () => {
+      dispatch({ type: 'SET_CONNECTION', connection: 'online' });
+      const session = loadTabSession();
+      if (session) socket.emit('rejoin-game', { roomCode: session.roomCode, token: session.token });
+    });
+
+    socket.on('disconnect', () => {
+      dispatch({ type: 'SET_CONNECTION', connection: 'offline' });
+    });
+
+    socket.on('rejoin-success', (snapshot: RoomSnapshot) => {
+      dispatch({ type: 'REJOINED', snapshot });
+    });
+
+    socket.on('rejoin-error', () => {
+      clearSession();
+      dispatch({ type: 'RESTORE_FAILED' });
+    });
+
+    socket.on('players-updated', (data: { players: Player[]; scores: PlayerScore[]; adjustedPlayerIds: string[] }) => {
+      dispatch({ type: 'PLAYERS_UPDATED', ...data });
+    });
+
+    socket.on('host-connection', (data: { connected: boolean }) => {
+      dispatch({ type: 'HOST_CONNECTION', connected: data.connected });
+    });
+
+    socket.on('game-created', (data: { roomCode: string; hostName: string; players: Player[]; token: string }) => {
+      saveSession({ roomCode: data.roomCode, token: data.token, role: 'host' });
       dispatch({
         type: 'GAME_CREATED',
         roomCode: data.roomCode,
@@ -255,8 +441,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       });
     });
 
-    socket.on('join-success', (data: { roomCode: string; players: Player[]; myId: string }) => {
-      dispatch({ type: 'JOIN_SUCCESS', ...data });
+    socket.on('join-success', (data: { roomCode: string; players: Player[]; myId: string; token: string }) => {
+      saveSession({ roomCode: data.roomCode, token: data.token, role: 'player' });
+      dispatch({ type: 'JOIN_SUCCESS', roomCode: data.roomCode, players: data.players, myId: data.myId });
     });
 
     socket.on('join-error', (data: { message: string }) => {
@@ -299,6 +486,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('game-over', (data: { scores: PlayerScore[] }) => {
+      // The game is finished: a refresh can still show the final scores for a few minutes, then it's forgotten.
+      const session = loadTabSession();
+      if (session) saveSession({ roomCode: session.roomCode, token: session.token, role: session.role }, FINISHED_TTL_MS);
       dispatch({ type: 'GAME_OVER', scores: data.scores });
     });
 
@@ -310,7 +500,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SCORE_ADJUSTED', ...data });
     });
 
+    // Sent only after the host has been gone long enough that the room was closed.
     socket.on('host-disconnected', () => {
+      clearSession();
       alert('The host has disconnected. The game has ended.');
       window.location.reload();
     });
@@ -350,11 +542,31 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     state.socket.emit('adjust-score', { roomCode: state.roomCode, playerId, amount });
   }, [state.socket, state.roomCode]);
 
-  const resetGame = useCallback(() => { dispatch({ type: 'RESET' }); }, []);
+  const resetGame = useCallback(() => {
+    clearSession();
+    dispatch({ type: 'RESET' });
+  }, []);
+  const leaveGame = useCallback(() => {
+    clearSession();
+    window.location.reload();
+  }, []);
+  const resumeGame = useCallback(() => {
+    const s = loadDeviceSession();
+    if (!s) { dispatch({ type: 'DECLINE_RESUME' }); return; }
+    // Adopt the seat into this tab, so a refresh from here on resumes it automatically.
+    saveSession({ roomCode: s.roomCode, token: s.token, role: s.role }, Math.max(1000, s.expiresAt - Date.now()));
+    dispatch({ type: 'ACCEPT_RESUME' });
+    if (state.socket?.connected) state.socket.emit('rejoin-game', { roomCode: s.roomCode, token: s.token });
+  }, [state.socket]);
+  const declineResume = useCallback(() => {
+    clearSession();
+    dispatch({ type: 'DECLINE_RESUME' });
+  }, []);
+  const clearNotice = useCallback(() => { dispatch({ type: 'CLEAR_NOTICE' }); }, []);
   const setError = useCallback((error: string | null) => { dispatch({ type: 'SET_ERROR', error }); }, []);
 
   return (
-    <GameContext.Provider value={{ state, createGame, joinGame, startGame, advance, submitAnswer, adjustScore, resetGame, setError }}>
+    <GameContext.Provider value={{ state, createGame, joinGame, startGame, advance, submitAnswer, adjustScore, resetGame, leaveGame, resumeGame, declineResume, clearNotice, setError }}>
       {children}
     </GameContext.Provider>
   );

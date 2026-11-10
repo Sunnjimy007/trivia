@@ -1,7 +1,7 @@
 import { useGame } from '../context/GameContext';
 
 export default function PlayerLobby() {
-  const { state } = useGame();
+  const { state, leaveGame } = useGame();
   const { roomCode, players, myId } = state;
   const me = players.find((p) => p.id === myId);
 
@@ -49,6 +49,13 @@ export default function PlayerLobby() {
             Get ready! Answer fast for more points 🏆
           </p>
         </div>
+
+        <button
+          onClick={leaveGame}
+          className="text-white/60 hover:text-white text-sm font-bold underline self-center"
+        >
+          Leave game
+        </button>
       </div>
     </div>
   );

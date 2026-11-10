@@ -45,7 +45,7 @@ const OPTION_COLORS = [
 ];
 
 export default function PlayerGame() {
-  const { state, submitAnswer } = useGame();
+  const { state, submitAnswer, leaveGame } = useGame();
   const { game, myId, myAnswer, lastAdjustment } = state;
 
   const myAnswerResult = game.answers.find((a) => a.playerId === myId);
@@ -278,7 +278,7 @@ export default function PlayerGame() {
             <h3 className="font-bold text-white text-base mb-3 text-center">Final Scores</h3>
             <Scoreboard scores={game.scores} highlightId={myId} />
           </div>
-          <button onClick={() => window.location.reload()} className="btn-secondary text-xl py-5">
+          <button onClick={leaveGame} className="btn-secondary text-xl py-5">
             🔄 Play Again
           </button>
         </div>

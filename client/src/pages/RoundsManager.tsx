@@ -4,6 +4,18 @@ import { useCallback, useEffect, useState } from 'react';
 // In prod: VITE_SOCKET_URL=https://your-server.railway.app → full URL
 const API = import.meta.env.VITE_SOCKET_URL || '';
 
+// Admin password (server env ADMIN_PASSWORD). Kept for this tab only, never in localStorage.
+const PW_KEY = 'trivia-admin-password';
+function getStoredPassword(): string {
+  try { return sessionStorage.getItem(PW_KEY) ?? ''; } catch { return ''; }
+}
+function storePassword(pw: string) {
+  try { sessionStorage.setItem(PW_KEY, pw); } catch { /* storage unavailable */ }
+}
+function clearStoredPassword() {
+  try { sessionStorage.removeItem(PW_KEY); } catch { /* storage unavailable */ }
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface RoundSummary {
   id: string;
@@ -205,6 +217,36 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   const [draft, setDraft] = useState<RoundDraft>(emptyRound());
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pwPrompt, setPwPrompt] = useState<{ resolve: (pw: string | null) => void; wrong: boolean } | null>(null);
+  const [pwInput, setPwInput] = useState('');
+
+  // Shows the password box (a real password field, since the host screen may be on a TV).
+  const askPassword = useCallback((wrong: boolean) => new Promise<string | null>((resolve) => {
+    setPwInput('');
+    setPwPrompt({ resolve, wrong });
+  }), []);
+
+  function answerPassword(pw: string | null) {
+    pwPrompt?.resolve(pw);
+    setPwPrompt(null);
+  }
+
+  // fetch() that sends the admin password. On a 401 it asks for the password and retries.
+  const adminFetch = useCallback(async (url: string, init: RequestInit = {}): Promise<Response> => {
+    const send = (pw: string) => fetch(url, {
+      ...init,
+      headers: { ...(init.headers as Record<string, string> | undefined), ...(pw ? { 'x-admin-password': pw } : {}) },
+    });
+    let res = await send(getStoredPassword());
+    for (let attempt = 0; res.status === 401 && attempt < 3; attempt++) {
+      const pw = await askPassword(attempt > 0 || !!getStoredPassword());
+      if (pw === null) return res;
+      storePassword(pw);
+      res = await send(pw);
+    }
+    if (res.status === 401) clearStoredPassword();
+    return res;
+  }, [askPassword]);
 
   const fetchRounds = useCallback(async () => {
     setLoading(true);
@@ -221,9 +263,13 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   // ── Toggle enabled/disabled ──
   async function handleToggle(id: string) {
     setToggling(id);
+    setMsg(null);
     try {
-      await fetch(`${API}/api/rounds/${id}/toggle`, { method: 'PATCH' });
+      const res = await adminFetch(`${API}/api/rounds/${id}/toggle`, { method: 'PATCH' });
+      if (!res.ok) setMsg({ ok: false, text: 'Could not change that round (wrong password?).' });
       fetchRounds();
+    } catch {
+      setMsg({ ok: false, text: 'Could not reach server.' });
     } finally {
       setToggling(null);
     }
@@ -233,18 +279,38 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   async function handleDelete(id: string) {
     if (!confirm('Delete this round? This cannot be undone.')) return;
     setDeleting(id);
+    setMsg(null);
     try {
-      await fetch(`${API}/api/rounds/${id}`, { method: 'DELETE' });
+      const res = await adminFetch(`${API}/api/rounds/${id}`, { method: 'DELETE' });
+      if (!res.ok) setMsg({ ok: false, text: 'Could not delete that round (wrong password?).' });
       fetchRounds();
+    } catch {
+      setMsg({ ok: false, text: 'Could not reach server.' });
     } finally {
       setDeleting(null);
     }
   }
 
+  // Full round data (including correct answers) needs the admin password.
+  async function loadFullRound(id: string): Promise<StoredRound | null> {
+    try {
+      const res = await adminFetch(`${API}/api/rounds/${id}`);
+      if (!res.ok) {
+        setMsg({ ok: false, text: 'Could not open that round (wrong password?).' });
+        return null;
+      }
+      return await res.json();
+    } catch {
+      setMsg({ ok: false, text: 'Could not reach server.' });
+      return null;
+    }
+  }
+
   // ── Open editor ──
   async function openEdit(id: string) {
-    const res = await fetch(`${API}/api/rounds/${id}`);
-    const full: StoredRound = await res.json();
+    setMsg(null);
+    const full = await loadFullRound(id);
+    if (!full) return;
     setDraft(roundToDraft(full));
     setFormMode({ kind: 'edit', id });
     setMsg(null);
@@ -252,8 +318,9 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   }
 
   async function openDuplicate(id: string) {
-    const res = await fetch(`${API}/api/rounds/${id}`);
-    const full: StoredRound = await res.json();
+    setMsg(null);
+    const full = await loadFullRound(id);
+    if (!full) return;
     const d = roundToDraft(full);
     d.name = `${d.name} (Copy)`;
     setDraft(d);
@@ -287,13 +354,13 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
 
       let res: Response;
       if (isEdit) {
-        res = await fetch(`${API}/api/rounds/${formMode.id}`, {
+        res = await adminFetch(`${API}/api/rounds/${formMode.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch('/api/rounds', {
+        res = await adminFetch(`${API}/api/rounds`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -371,6 +438,11 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
           {/* ── List ── */}
           {tab === 'list' && (
             <div className="p-4 sm:p-5 flex flex-col gap-3">
+              {msg && !msg.ok && (
+                <div className="rounded-2xl px-4 py-3 font-bold text-sm bg-red-500/20 border border-red-500/40 text-red-400">
+                  {msg.text}
+                </div>
+              )}
               {loading ? (
                 <div className="text-center py-12">
                   <p className="text-gray-400 font-bold animate-pulse">Loading rounds...</p>
@@ -549,6 +621,46 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
+
+      {/* Admin password prompt */}
+      {pwPrompt && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
+          <form
+            onSubmit={(e) => { e.preventDefault(); answerPassword(pwInput); }}
+            className="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4"
+          >
+            <h3 className="font-display text-2xl text-white">Admin password</h3>
+            <p className="text-gray-400 text-sm">Enter the admin password to manage rounds.</p>
+            <input
+              type="password"
+              value={pwInput}
+              onChange={(e) => setPwInput(e.target.value)}
+              autoFocus
+              autoComplete="current-password"
+              className={inputCls}
+              placeholder="Password"
+            />
+            {pwPrompt.wrong && (
+              <p className="text-red-400 font-bold text-sm">That password didn't work. Try again.</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => answerPassword(null)}
+                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl"
+              >
+                Unlock
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

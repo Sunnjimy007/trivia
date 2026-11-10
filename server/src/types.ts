@@ -1,3 +1,5 @@
+import type { Round } from './data/questions';
+
 export interface Player {
   id: string;
   name: string;
@@ -24,11 +26,24 @@ export type GamePhase =
   | 'round_summary'
   | 'game_over';
 
+type Timer = ReturnType<typeof setTimeout>;
+
 export interface GameRoom {
   roomCode: string;
   hostId: string;
   hostName: string;
+  // Secret that lets the host's browser take its seat back after a refresh or dropped connection.
+  // Never put tokens in anything that is broadcast to the room.
+  hostToken: string;
+  hostConnected: boolean;
+  hostGraceTimer: Timer | null;
   players: Player[];
+  // token -> current player id (the id is the socket id, so it changes when a player reconnects)
+  playerTokens: Map<string, string>;
+  // token -> timer that removes a disconnected player from the lobby if they never come back
+  lobbyGraceTimers: Map<string, Timer>;
+  // The enabled rounds as they were when the game started, so toggling a round mid-game can't shift indices.
+  rounds: Round[];
   phase: GamePhase;
   currentRoundIndex: number;
   currentQuestionIndex: number;
@@ -36,7 +51,7 @@ export interface GameRoom {
   answerDistribution: Record<string, number>;
   questionStartTime: number;
   timeLimit: number;
-  questionTimer: ReturnType<typeof setTimeout> | null;
+  questionTimer: Timer | null;
   correctAnswerOrder: number;
   adjustedPlayerIds: Set<string>;
 }
@@ -61,4 +76,31 @@ export interface PlayerScore {
   avatar: string;
   score: number;
   rank: number;
+}
+
+// Everything a reconnecting client needs to redraw the game exactly where it left off.
+export interface RoomSnapshot {
+  roomCode: string;
+  isHost: boolean;
+  myId: string;
+  myName: string;
+  hostConnected: boolean;
+  players: Player[];
+  phase: GamePhase;
+  round?: RoundForClient;
+  roundIndex: number;
+  totalRounds: number;
+  question?: QuestionForClient;
+  questionIndex: number;
+  totalQuestions: number;
+  questionStartTime: number;
+  timeLimit: number;
+  answeredCount: number;
+  distribution: Record<string, number>;
+  myAnswer: string | null;
+  correctOptionId?: string;
+  answers: PlayerAnswer[];
+  scores: PlayerScore[];
+  isLastRound: boolean;
+  adjustedPlayerIds: string[];
 }

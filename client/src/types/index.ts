@@ -59,6 +59,33 @@ export type GamePhase =
   | 'round_summary'
   | 'game_over';
 
+// What the server sends back to a browser that takes its old seat back (page refresh, dropped connection).
+export interface RoomSnapshot {
+  roomCode: string;
+  isHost: boolean;
+  myId: string;
+  myName: string;
+  hostConnected: boolean;
+  players: Player[];
+  phase: GamePhase;
+  round?: RoundInfo;
+  roundIndex: number;
+  totalRounds: number;
+  question?: Question;
+  questionIndex: number;
+  totalQuestions: number;
+  questionStartTime: number;
+  timeLimit: number;
+  answeredCount: number;
+  distribution: Record<string, number>;
+  myAnswer: string | null;
+  correctOptionId?: string;
+  answers: PlayerAnswer[];
+  scores: PlayerScore[];
+  isLastRound: boolean;
+  adjustedPlayerIds: string[];
+}
+
 export interface GameState {
   phase: GamePhase;
   roomCode: string;

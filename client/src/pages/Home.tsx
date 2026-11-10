@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../context/GameContext';
 
-export default function Home() {
+export default function Home({ onJoin }: { onJoin: () => void }) {
   const { state, createGame, setError } = useGame();
   const [mode, setMode] = useState<'choose' | 'host'>('choose');
   const [hostName, setHostName] = useState('');
@@ -123,9 +123,8 @@ export default function Home() {
 
           {/* Player join button — purple */}
           <button
-            onClick={() => setError(null)}
+            onClick={() => { setError(null); onJoin(); }}
             className="btn-secondary"
-            id="go-to-join"
           >
             📱 Join a Game
           </button>

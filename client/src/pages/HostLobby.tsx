@@ -13,7 +13,7 @@ const ROUNDS = [
 ];
 
 export default function HostLobby() {
-  const { state, startGame } = useGame();
+  const { state, startGame, leaveGame } = useGame();
   const { roomCode, players, error, myName } = state;
   const canStart = players.length >= 1;
   const [showRoundsManager, setShowRoundsManager] = useState(false);
@@ -162,6 +162,13 @@ export default function HostLobby() {
         {canStart
           ? `🚀 Start the Game! (${players.length} player${players.length !== 1 ? 's' : ''})`
           : 'Waiting for players to join...'}
+      </button>
+
+      <button
+        onClick={() => { if (confirm('Cancel this game and go back to the start?')) leaveGame(); }}
+        className="text-gray-500 hover:text-gray-300 text-sm font-bold underline"
+      >
+        Cancel game
       </button>
 
       {/* Bottom padding for mobile */}

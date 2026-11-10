@@ -173,7 +173,7 @@ function AdjustmentToast({
 
 // ── Host wrapper ──────────────────────────────────────────────────────────────
 export default function HostGame() {
-  const { state, advance, adjustScore } = useGame();
+  const { state, advance, adjustScore, leaveGame } = useGame();
   const { game, players, answeredCount, answerDistribution, myName, lastAdjustment, adjustedPlayerIds } = state;
 
   // ── Round Intro ─────────────────────────────────────────────────────────
@@ -641,7 +641,7 @@ export default function HostGame() {
         )}
 
         <button
-          onClick={() => window.location.reload()}
+          onClick={leaveGame}
           className="w-full max-w-sm bg-purple-600 hover:bg-purple-500 text-white font-bold
                      text-xl sm:text-2xl py-5 rounded-2xl border-b-4 border-purple-800
                      active:scale-95 transition-all relative z-10"
