@@ -74,9 +74,9 @@ export default function PlayerGame() {
                             px-4 py-1.5 rounded-full mb-3 inline-block">
               Round {game.roundIndex + 1} of {game.totalRounds}
             </div>
-            <h2 className="font-display text-4xl sm:text-5xl text-white">
+            <h1 className="font-display text-4xl sm:text-5xl text-white">
               {game.currentRound?.name}
-            </h2>
+            </h1>
             <p className="text-white/80 text-base sm:text-xl mt-2 px-4">
               {game.currentRound?.description}
             </p>
@@ -110,9 +110,9 @@ export default function PlayerGame() {
 
         {/* Question card */}
         <div className="card flex-shrink-0">
-          <p className="font-display text-xl sm:text-2xl text-gray-800 text-center leading-snug">
+          <h1 className="font-display text-xl sm:text-2xl text-gray-800 text-center leading-snug">
             {game.currentQuestion?.text}
-          </p>
+          </h1>
         </div>
 
         {/* Answered state */}
@@ -178,7 +178,7 @@ export default function PlayerGame() {
           {iGotIt ? (
             <>
               <div className="text-4xl mb-1">🎉</div>
-              <p className="font-display text-3xl text-green-700">Correct!</p>
+              <h1 className="font-display text-3xl text-green-700">Correct!</h1>
               <p className="text-green-600 font-bold text-xl mt-1">+{myPoints.toLocaleString()} pts</p>
               {myAnswerResult.answerOrder === 1 && (
                 <p className="text-amber-500 font-bold text-sm mt-1">⚡ First to answer!</p>
@@ -187,13 +187,13 @@ export default function PlayerGame() {
           ) : iWasWrong ? (
             <>
               <div className="text-4xl mb-1">😬</div>
-              <p className="font-display text-3xl text-red-700">Oops!</p>
+              <h1 className="font-display text-3xl text-red-700">Oops!</h1>
               <p className="text-red-500 font-bold text-base mt-1">Better luck next time!</p>
             </>
           ) : (
             <>
               <div className="text-4xl mb-1">⏰</div>
-              <p className="font-display text-3xl text-gray-600">Time's up!</p>
+              <h1 className="font-display text-3xl text-gray-600">Time's up!</h1>
               <p className="text-gray-500 font-bold text-base mt-1">Didn't answer in time</p>
             </>
           )}
@@ -234,7 +234,7 @@ export default function PlayerGame() {
         <div className="w-full max-w-sm flex flex-col gap-4 animate-slide-up py-4">
           <div className="text-center">
             <div className="text-5xl mb-2">{game.currentRound?.emoji}</div>
-            <h2 className="font-display text-4xl text-white">Round Complete!</h2>
+            <h1 className="font-display text-4xl text-white">Round Complete!</h1>
             <p className="text-white/70 text-lg mt-1">You're #{myRank} 🏆</p>
             <p className="text-amber-300 font-display text-2xl mt-1">{myCurrentScore.toLocaleString()} pts</p>
           </div>
@@ -265,7 +265,7 @@ export default function PlayerGame() {
         <div className="w-full max-w-sm flex flex-col gap-4 animate-bounce-in relative z-10 py-4">
           <div className="text-center">
             <div className="text-6xl mb-2">{isWinner ? '🏆' : '🎉'}</div>
-            <h2 className="font-display text-5xl text-white">Game Over!</h2>
+            <h1 className="font-display text-5xl text-white">Game Over!</h1>
             {myScore && (
               <div className="mt-3">
                 <p className="text-white/70 text-base">Your final rank</p>
@@ -275,7 +275,7 @@ export default function PlayerGame() {
             )}
           </div>
           <div className="bg-white/10 rounded-3xl p-6">
-            <h3 className="font-bold text-white text-base mb-3 text-center">Final Scores</h3>
+            <h2 className="font-bold text-white text-base mb-3 text-center">Final Scores</h2>
             <Scoreboard scores={game.scores} highlightId={myId} />
           </div>
           <button onClick={leaveGame} className="btn-secondary text-xl py-5">
@@ -290,7 +290,7 @@ export default function PlayerGame() {
     <div className="screen">
       <div className="text-center">
         <div className="text-5xl mb-3 animate-pulse-slow">🎮</div>
-        <p className="font-bold text-white text-xl">Waiting for the game to start...</p>
+        <h1 className="font-bold text-white text-xl">Waiting for the game to start...</h1>
       </div>
     </div>
   );

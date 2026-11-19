@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { useGame } from '../context/GameContext';
+import { roundCountText } from '../lib/rounds';
+import { useEnabledRounds } from '../lib/useEnabledRounds';
 
 export default function Home({ onJoin, startInHostMode = false }: { onJoin: () => void; startInHostMode?: boolean }) {
   const { state, createGame, setError } = useGame();
   const [mode, setMode] = useState<'choose' | 'host'>(startInHostMode ? 'host' : 'choose');
   const [hostName, setHostName] = useState('');
+  // The rounds a game would really play right now (null until known).
+  const { rounds } = useEnabledRounds();
+  const hasRounds = !!rounds && rounds.length > 0;
 
   function handleCreateGame() {
     const name = hostName.trim();
@@ -18,10 +23,12 @@ export default function Home({ onJoin, startInHostMode = false }: { onJoin: () =
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md flex flex-col gap-6 animate-slide-up">
+          <h1 className="sr-only">Host a game</h1>
 
           <button
             onClick={() => { setMode('choose'); setError(null); }}
-            className="text-gray-400 hover:text-white text-base font-bold flex items-center gap-2 self-start"
+            className="text-gray-400 hover:text-white text-base font-bold flex items-center gap-2 self-start
+                       min-h-[44px] pr-3"
           >
             ← Back
           </button>
@@ -106,7 +113,7 @@ export default function Home({ onJoin, startInHostMode = false }: { onJoin: () =
             Amali's<br />Trivia Game
           </h1>
           <p className="text-white/70 text-xl mt-3 font-bold">
-            7 rounds · Up to 10 players
+            {hasRounds ? `${roundCountText(rounds.length)} · ` : ''}Up to 10 players
           </p>
         </div>
 
@@ -130,13 +137,16 @@ export default function Home({ onJoin, startInHostMode = false }: { onJoin: () =
           </button>
         </div>
 
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest">7 Rounds</p>
-          <p className="text-white/50 text-sm text-center font-bold">
-            General Knowledge · Australian Animals · Animals<br />
-            Countries · Sports · Geography · Diwali
-          </p>
-        </div>
+        {hasRounds && (
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">
+              {roundCountText(rounds.length)}
+            </p>
+            <p className="text-white/50 text-sm text-center font-bold">
+              {rounds.map((r) => r.name).join(' · ')}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -389,6 +389,9 @@ interface GameContextValue {
   // Answer the "welcome back" question shown when a new tab finds a game this device was in.
   resumeGame: () => void;
   declineResume: () => void;
+  // Hide the "welcome back" offer for this tab but keep the saved game (used when the visitor
+  // arrived with an explicit request, such as a join link).
+  dismissResumeOffer: () => void;
   clearNotice: () => void;
   setError: (error: string | null) => void;
 }
@@ -562,11 +565,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     clearSession();
     dispatch({ type: 'DECLINE_RESUME' });
   }, []);
+  const dismissResumeOffer = useCallback(() => { dispatch({ type: 'DECLINE_RESUME' }); }, []);
   const clearNotice = useCallback(() => { dispatch({ type: 'CLEAR_NOTICE' }); }, []);
   const setError = useCallback((error: string | null) => { dispatch({ type: 'SET_ERROR', error }); }, []);
 
   return (
-    <GameContext.Provider value={{ state, createGame, joinGame, startGame, advance, submitAnswer, adjustScore, resetGame, leaveGame, resumeGame, declineResume, clearNotice, setError }}>
+    <GameContext.Provider value={{ state, createGame, joinGame, startGame, advance, submitAnswer, adjustScore, resetGame, leaveGame, resumeGame, declineResume, dismissResumeOffer, clearNotice, setError }}>
       {children}
     </GameContext.Provider>
   );

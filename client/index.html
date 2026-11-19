@@ -17,7 +17,9 @@
       })();
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Pinch zoom stays available (accessibility). Double-tap zoom is turned off in CSS instead
+         (touch-action: manipulation), so fast taps on answer buttons never zoom the page. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Amali's Trivia Game 🎉</title>
     <meta name="description" content="A multiplayer trivia game for family and friends: one host, up to 10 players, answer on your phone." />
 

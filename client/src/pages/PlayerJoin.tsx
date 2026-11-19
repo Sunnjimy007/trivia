@@ -41,14 +41,15 @@ export default function PlayerJoin({ onBack, initialCode = '' }: PlayerJoinProps
             if (step === 'name') { setStep('code'); setError(null); }
             else { onBack(); setError(null); }
           }}
-          className="text-white/70 hover:text-white text-lg font-bold flex items-center gap-2 self-start"
+          className="text-white/70 hover:text-white text-lg font-bold flex items-center gap-2 self-start
+                     min-h-[44px] pr-3"
         >
           ← Back
         </button>
 
         <div className="text-center">
           <div className="text-6xl mb-3">📱</div>
-          <h2 className="font-display text-4xl text-white">Join a Game</h2>
+          <h1 className="font-display text-4xl text-white">Join a Game</h1>
           <p className="text-white/70 text-lg mt-2">
             {step === 'code' ? 'Enter the room code from the host' : 'What shall we call you?'}
           </p>

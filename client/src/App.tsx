@@ -15,8 +15,8 @@ function Restoring() {
     <div className="screen">
       <div className="text-center flex flex-col items-center gap-6">
         <div className="text-7xl animate-wiggle">🎉</div>
-        <p className="text-white text-xl font-bold">Reconnecting to your game…</p>
-        <button onClick={leaveGame} className="text-white/60 hover:text-white text-sm font-bold underline">
+        <h1 className="text-white text-xl font-bold">Reconnecting to your game…</h1>
+        <button onClick={leaveGame} className="text-white/60 hover:text-white text-sm font-bold underline min-h-[44px] px-4">
           Start over
         </button>
       </div>
@@ -33,7 +33,7 @@ function ResumePrompt({ roomCode, role }: { roomCode: string; role: 'host' | 'pl
       <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center animate-bounce-in">
         <div className="text-7xl">👋</div>
         <div>
-          <h2 className="font-display text-4xl text-white">Welcome back!</h2>
+          <h1 className="font-display text-4xl text-white">Welcome back!</h1>
           <p className="text-white/70 text-lg mt-2">
             You were {role === 'host' ? 'hosting' : 'playing in'} game{' '}
             <span className="font-display tracking-widest text-white">{roomCode.toUpperCase()}</span>.
@@ -68,7 +68,7 @@ function readIntent(): { play: 'host' | 'join' | null; code: string } {
 }
 
 function Page() {
-  const { state } = useGame();
+  const { state, dismissResumeOffer } = useGame();
   const [intent] = useState(readIntent);
   const [showJoin, setShowJoin] = useState(intent.play === 'join');
   const [startCode, setStartCode] = useState(intent.code);
@@ -78,11 +78,18 @@ function Page() {
     if (intent.play) window.history.replaceState(null, '', window.location.pathname);
   }, [intent.play]);
 
+  // An explicit request (a host or join link) beats the "welcome back" offer for an old game on
+  // this device. The saved game is kept; the offer just doesn't get in the way, including if the
+  // visitor taps Back to the start screen.
+  useEffect(() => {
+    if (intent.play && state.resumeOffer) dismissResumeOffer();
+  }, [intent.play, state.resumeOffer, dismissResumeOffer]);
+
   // Route based on app view state
   const { view, isHost } = state;
 
   if (state.restoring) return <Restoring />;
-  if (state.resumeOffer && view === 'home') {
+  if (state.resumeOffer && view === 'home' && !intent.play) {
     return <ResumePrompt roomCode={state.resumeOffer.roomCode} role={state.resumeOffer.role} />;
   }
 

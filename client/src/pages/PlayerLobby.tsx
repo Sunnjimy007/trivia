@@ -8,6 +8,7 @@ export default function PlayerLobby() {
   return (
     <div className="screen">
       <div className="w-full max-w-sm flex flex-col gap-6 animate-bounce-in">
+        <h1 className="sr-only">Game lobby. Room code {roomCode}.</h1>
         <div className="text-center">
           <div className="text-7xl mb-3 animate-pulse-slow">{me?.avatar ?? '🦄'}</div>
           <h2 className="font-display text-4xl text-white">{me?.name ?? 'You'}</h2>
@@ -52,7 +53,7 @@ export default function PlayerLobby() {
 
         <button
           onClick={leaveGame}
-          className="text-white/60 hover:text-white text-sm font-bold underline self-center"
+          className="text-white/60 hover:text-white text-sm font-bold underline self-center min-h-[44px] px-4"
         >
           Leave game
         </button>

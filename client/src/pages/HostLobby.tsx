@@ -1,26 +1,23 @@
 import { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import RoundsManager from './RoundsManager';
-
-const ROUNDS = [
-  { emoji: '🌍', name: 'General Knowledge' },
-  { emoji: '🦘', name: 'Australian Animals' },
-  { emoji: '🐾', name: 'Animals' },
-  { emoji: '🗺️', name: 'Countries' },
-  { emoji: '⚽', name: 'Sports' },
-  { emoji: '🧭', name: 'Geography' },
-  { emoji: '🪔', name: 'Diwali' },
-];
+import { useEnabledRounds } from '../lib/useEnabledRounds';
 
 export default function HostLobby() {
   const { state, startGame, leaveGame } = useGame();
   const { roomCode, players, error, myName } = state;
-  const canStart = players.length >= 1;
   const [showRoundsManager, setShowRoundsManager] = useState(false);
+  // The rounds this game will really play (null until known). Refreshed after Manage Rounds closes.
+  const { rounds, refresh: refreshRounds } = useEnabledRounds();
+  const noRounds = rounds !== null && rounds.length === 0;
+  const canStart = players.length >= 1 && !noRounds;
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center p-4 sm:p-6 gap-5 overflow-y-auto">
-      {showRoundsManager && <RoundsManager onClose={() => setShowRoundsManager(false)} />}
+      <h1 className="sr-only">Host lobby. Room code {roomCode}.</h1>
+      {showRoundsManager && (
+        <RoundsManager onClose={() => { setShowRoundsManager(false); refreshRounds(); }} />
+      )}
 
       {/* Game Master badge */}
       <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/40
@@ -68,7 +65,7 @@ export default function HostLobby() {
         {/* Player list panel */}
         <div className="bg-gray-900 border border-gray-700 rounded-3xl p-5 sm:p-6 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-white font-bold text-lg sm:text-xl">Players Joined</h3>
+            <h2 className="text-white font-bold text-lg sm:text-xl">Players Joined</h2>
             <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30
                              rounded-full px-3 py-1 font-bold text-xs sm:text-sm">
               {players.length} / 10
@@ -113,7 +110,7 @@ export default function HostLobby() {
             }
           </div>
 
-          {!canStart && (
+          {players.length < 1 && (
             <p className="text-amber-400 text-xs font-bold text-center">
               ⚠️ Need at least 1 player to start
             </p>
@@ -121,16 +118,28 @@ export default function HostLobby() {
         </div>
       </div>
 
-      {/* Round list — wraps cleanly on mobile */}
-      <div className="w-full max-w-3xl grid grid-cols-4 sm:grid-cols-7 gap-2">
-        {ROUNDS.map(({ emoji, name }, i) => (
-          <div key={name} className="bg-gray-900 border border-gray-800 rounded-xl p-2 text-center">
-            <p className="text-gray-500 text-xs font-bold">R{i + 1}</p>
-            <p className="text-lg mt-0.5">{emoji}</p>
-            <p className="text-gray-500 text-xs mt-0.5 hidden sm:block leading-tight">{name}</p>
-          </div>
-        ))}
-      </div>
+      {/* The rounds this game will play, in order. Only switched-on rounds are listed. */}
+      {rounds && rounds.length > 0 && (
+        <div className="w-full max-w-3xl flex flex-wrap justify-center gap-2">
+          {rounds.map(({ id, emoji, name }, i) => (
+            <div
+              key={id}
+              className="w-[calc(25%-0.375rem)] sm:w-24 bg-gray-900 border border-gray-800 rounded-xl p-2 text-center"
+            >
+              <p className="text-gray-500 text-xs font-bold">R{i + 1}</p>
+              <p className="text-lg mt-0.5">{emoji}</p>
+              <p className="text-gray-500 text-xs mt-0.5 hidden sm:block leading-tight">{name}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {noRounds && (
+        <div className="w-full max-w-3xl bg-amber-500/15 border border-amber-500/40 text-amber-300
+                        rounded-xl px-4 py-3 font-bold text-center text-sm">
+          No rounds are switched on. Open "Add / Manage Rounds" and turn some on to start.
+        </div>
+      )}
 
       {error && (
         <div className="w-full max-w-3xl bg-red-500/20 border border-red-500/40 text-red-400
@@ -161,12 +170,14 @@ export default function HostLobby() {
       >
         {canStart
           ? `🚀 Start the Game! (${players.length} player${players.length !== 1 ? 's' : ''})`
+          : noRounds
+          ? 'Turn on a round to start'
           : 'Waiting for players to join...'}
       </button>
 
       <button
         onClick={() => { if (confirm('Cancel this game and go back to the start?')) leaveGame(); }}
-        className="text-gray-500 hover:text-gray-300 text-sm font-bold underline"
+        className="text-gray-500 hover:text-gray-300 text-sm font-bold underline min-h-[44px] px-4"
       >
         Cancel game
       </button>

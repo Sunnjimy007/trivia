@@ -8,6 +8,11 @@
     min-height: 100%;
   }
 
+  /* Allow pinch zoom, but not double-tap zoom: players tap answers fast. */
+  html {
+    touch-action: manipulation;
+  }
+
   body {
     font-family: 'Nunito', sans-serif;
     -webkit-tap-highlight-color: transparent;

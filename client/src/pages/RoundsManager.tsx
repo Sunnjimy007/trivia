@@ -165,7 +165,7 @@ function QuestionForm({
         placeholder="Type your question here..."
         rows={2}
         className="w-full bg-gray-800 border border-gray-600 focus:border-purple-500 rounded-xl
-                   px-3 py-2.5 text-white text-sm font-bold placeholder-gray-500
+                   px-3 py-2.5 text-white text-base font-bold placeholder-gray-500
                    focus:outline-none transition-colors resize-none"
       />
 
@@ -178,7 +178,7 @@ function QuestionForm({
               <button
                 onClick={() => set('correct', letter)}
                 title={`Mark ${letter} as correct answer`}
-                className={`flex-shrink-0 w-8 h-8 rounded-lg font-display text-lg font-bold
+                className={`flex-shrink-0 w-11 h-11 rounded-lg font-display text-lg font-bold
                             transition-all border-2
                             ${isCorrect
                               ? 'bg-green-600 border-green-400 text-white'
@@ -191,7 +191,7 @@ function QuestionForm({
                 value={q[field] as string}
                 onChange={(e) => set(field, e.target.value)}
                 placeholder={`Option ${letter}`}
-                className={`flex-1 bg-gray-800 border rounded-xl px-3 py-2 text-white text-sm
+                className={`flex-1 bg-gray-800 border rounded-xl px-3 py-2 text-white text-base
                             font-bold placeholder-gray-500 focus:outline-none transition-colors
                             ${isCorrect ? 'border-green-600 focus:border-green-400' : 'border-gray-600 focus:border-purple-500'}`}
               />
@@ -393,18 +393,23 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   const formTitle = isEditing ? 'Edit Round' : 'Add New Round';
 
   const inputCls = 'w-full bg-gray-800 border border-gray-600 focus:border-purple-500 rounded-xl ' +
-                   'px-3 py-3 text-white font-bold placeholder-gray-500 focus:outline-none transition-colors text-sm';
+                   'px-3 py-3 text-white font-bold placeholder-gray-500 focus:outline-none transition-colors text-base';
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3 sm:p-6">
+    <div
+      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rounds-title"
+    >
       <div className="bg-gray-900 border border-gray-700 rounded-3xl w-full max-w-2xl
                       max-h-[92vh] flex flex-col shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 flex-shrink-0">
           <div>
-            <h2 className="font-display text-2xl sm:text-3xl text-white">Manage Rounds</h2>
+            <h2 id="rounds-title" className="font-display text-2xl sm:text-3xl text-white">Manage Rounds</h2>
             <p className="text-gray-400 text-xs mt-0.5">Toggle rounds on/off · Edit · Add new</p>
           </div>
           <button

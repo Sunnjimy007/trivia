@@ -171,6 +171,34 @@ function AdjustmentToast({
   );
 }
 
+// The one button that moves the game on. It sits where it always did when the screen has room,
+// and stays pinned to the bottom of the window when the content is taller (long scoreboards and
+// podiums used to push it below the fold, so the host had to scroll to find it).
+function HostAdvance({
+  onClick,
+  className,
+  children,
+  hideOnLarge = false,
+}: {
+  onClick: () => void;
+  className: string;
+  children: React.ReactNode;
+  hideOnLarge?: boolean;
+}) {
+  return (
+    <div
+      className={`sticky bottom-0 z-30 flex w-full justify-center px-2 pt-8 pointer-events-none
+                  bg-gradient-to-t from-gray-950 via-gray-950/90 to-transparent
+                  ${hideOnLarge ? 'lg:hidden' : ''}`}
+      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+    >
+      <button onClick={onClick} className={`pointer-events-auto ${className}`}>
+        {children}
+      </button>
+    </div>
+  );
+}
+
 // ── Host wrapper ──────────────────────────────────────────────────────────────
 export default function HostGame() {
   const { state, advance, adjustScore, leaveGame } = useGame();
@@ -180,7 +208,7 @@ export default function HostGame() {
   if (game.phase === 'round_intro') {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center
-                      p-4 sm:p-8 gap-5 sm:gap-8 overflow-y-auto">
+                      p-4 sm:p-8 gap-5 sm:gap-8">
         <AdjustmentToast adjustment={lastAdjustment} />
 
         <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/30
@@ -202,9 +230,9 @@ export default function HostGame() {
               Round {game.roundIndex + 1} of {game.totalRounds}
             </span>
           </div>
-          <h2 className="font-display text-4xl sm:text-6xl lg:text-7xl text-white mb-3">
+          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl text-white mb-3">
             {game.currentRound?.name}
-          </h2>
+          </h1>
           <p className="text-gray-300 text-base sm:text-xl lg:text-2xl font-bold">
             {game.currentRound?.description}
           </p>
@@ -227,7 +255,7 @@ export default function HostGame() {
           </div>
         )}
 
-        <button
+        <HostAdvance
           onClick={advance}
           className="w-full max-w-md bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600
                      text-white font-bold text-xl sm:text-3xl py-5 sm:py-6 rounded-2xl
@@ -235,7 +263,7 @@ export default function HostGame() {
                      transition-all shadow-lg shadow-emerald-500/30"
         >
           🚀 Begin Round!
-        </button>
+        </HostAdvance>
       </div>
     );
   }
@@ -279,9 +307,9 @@ export default function HostGame() {
             <div className="flex flex-col gap-3 lg:flex-1 lg:min-h-0">
               <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-6
                               text-center">
-                <p className="font-display text-xl sm:text-3xl lg:text-4xl text-white leading-tight">
+                <h1 className="font-display text-xl sm:text-3xl lg:text-4xl text-white leading-tight">
                   {game.currentQuestion?.text}
-                </p>
+                </h1>
               </div>
 
               {/* Fixed-height tiles on mobile, flex-1 on desktop */}
@@ -353,9 +381,15 @@ export default function HostGame() {
     const correct = game.answers
       .filter((a) => a.isCorrect)
       .sort((a, b) => a.answerOrder - b.answerOrder);
+    const nextLabel = game.questionIndex + 1 >= game.totalQuestions
+      ? '📊 Round Summary →'
+      : `Next Question → (${game.questionIndex + 2}/${game.totalQuestions})`;
+    const nextClass = `bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white
+                       font-bold text-lg sm:text-xl py-4 rounded-2xl border-b-4
+                       border-purple-800 active:border-b-0 active:scale-95 transition-all`;
 
     return (
-      <div className="bg-gray-950 min-h-screen overflow-y-auto
+      <div className="bg-gray-950 min-h-screen
                       lg:h-screen lg:overflow-hidden lg:flex lg:flex-col">
         <AdjustmentToast adjustment={lastAdjustment} />
 
@@ -384,9 +418,9 @@ export default function HostGame() {
             {/* LEFT: answer tiles + next button */}
             <div className="flex flex-col gap-3 lg:flex-1 lg:min-h-0">
               <div className="bg-gray-900 border border-gray-700 rounded-2xl p-3 sm:p-5 text-center">
-                <p className="font-display text-lg sm:text-3xl text-white leading-tight">
+                <h1 className="font-display text-lg sm:text-3xl text-white leading-tight">
                   {game.currentQuestion?.text}
-                </p>
+                </h1>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:gap-3
@@ -446,15 +480,9 @@ export default function HostGame() {
                 })}
               </div>
 
-              <button
-                onClick={advance}
-                className="bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white
-                           font-bold text-lg sm:text-xl py-4 rounded-2xl border-b-4
-                           border-purple-800 active:border-b-0 active:scale-95 transition-all"
-              >
-                {game.questionIndex + 1 >= game.totalQuestions
-                  ? '📊 Round Summary →'
-                  : `Next Question → (${game.questionIndex + 2}/${game.totalQuestions})`}
+              {/* Large screens: the button sits under the tiles. Smaller screens use the pinned one below. */}
+              <button onClick={advance} className={`hidden lg:block ${nextClass}`}>
+                {nextLabel}
               </button>
             </div>
 
@@ -464,6 +492,10 @@ export default function HostGame() {
             </div>
           </div>
         </div>
+
+        <HostAdvance onClick={advance} className={`w-full max-w-md ${nextClass}`} hideOnLarge>
+          {nextLabel}
+        </HostAdvance>
       </div>
     );
   }
@@ -475,7 +507,7 @@ export default function HostGame() {
 
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center
-                      p-4 sm:p-8 gap-5 sm:gap-8 overflow-y-auto">
+                      p-4 sm:p-8 gap-5 sm:gap-8">
         <AdjustmentToast adjustment={lastAdjustment} />
 
         <div className="text-center animate-bounce-in">
@@ -485,7 +517,7 @@ export default function HostGame() {
               Round {game.roundIndex + 1} Complete!
             </span>
           </div>
-          <h2 className="font-display text-4xl sm:text-6xl text-white">{game.currentRound?.name}</h2>
+          <h1 className="font-display text-4xl sm:text-6xl text-white">{game.currentRound?.name}</h1>
         </div>
 
         {/* Podium — scaled for screen size */}
@@ -549,15 +581,14 @@ export default function HostGame() {
           </div>
         </div>
 
-        <button
+        <HostAdvance
           onClick={advance}
           className="w-full max-w-md bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white
                      font-bold text-xl sm:text-3xl py-5 sm:py-6 rounded-2xl border-b-4 border-purple-800
                      active:border-b-0 active:scale-95 transition-all shadow-lg shadow-purple-500/20"
         >
           {game.isLastRound ? '🏆 Final Results!' : 'Next Round →'}
-        </button>
-        <div className="h-2" />
+        </HostAdvance>
       </div>
     );
   }
@@ -576,7 +607,7 @@ export default function HostGame() {
 
         <div className="text-center animate-bounce-in relative z-10">
           <div className="text-6xl sm:text-8xl mb-3">🏆</div>
-          <h2 className="font-display text-5xl sm:text-7xl text-white mb-4">Game Over!</h2>
+          <h1 className="font-display text-5xl sm:text-7xl text-white mb-4">Game Over!</h1>
           {winner && (
             <div className="bg-amber-500/20 border border-amber-500/30 rounded-2xl px-6 sm:px-8 py-4 inline-block">
               <p className="text-amber-300 font-bold uppercase tracking-widest text-xs sm:text-sm mb-2">
