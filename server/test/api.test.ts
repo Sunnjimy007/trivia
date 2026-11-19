@@ -96,6 +96,30 @@ describe('rounds API with ADMIN_PASSWORD set', () => {
     assert.equal((await api('/api/rounds/not-a-round/toggle', { method: 'PATCH' })).status, 404);
   });
 
+  it('reports the speed-factor setting to anyone, and only the password can change it', async () => {
+    const read = async () => (await api('/api/settings', { pw: null })).json();
+    const patch = (body: unknown, pw: string | null = PASSWORD) =>
+      api('/api/settings', { method: 'PATCH', pw, body: JSON.stringify(body) });
+
+    assert.deepEqual(await read(), { speedScoring: true }); // on unless someone turns it off
+    assert.equal((await patch({ speedScoring: false }, null)).status, 401);
+    assert.equal((await patch({ speedScoring: false }, 'wrong')).status, 401);
+    assert.deepEqual(await read(), { speedScoring: true });
+
+    const off = await patch({ speedScoring: false });
+    assert.equal(off.status, 200);
+    assert.deepEqual(await off.json(), { speedScoring: false });
+    assert.equal(saved().settings.speedScoring, false); // survives a restart
+    assert.deepEqual(await read(), { speedScoring: false });
+
+    for (const bad of [{}, { speedScoring: 'no' }, { speedScoring: 0 }, null]) {
+      assert.equal((await patch(bad)).status, 400);
+    }
+    assert.deepEqual(await read(), { speedScoring: false });
+
+    assert.deepEqual(await (await patch({ speedScoring: true })).json(), { speedScoring: true });
+  });
+
   it('creates, edits and deletes a custom round', async () => {
     const created = await (await api('/api/rounds', { method: 'POST', body: JSON.stringify(validRound()) })).json();
     assert.deepEqual(created, { success: true, id: 'custom-test-1' });

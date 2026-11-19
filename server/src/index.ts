@@ -152,6 +152,22 @@ app.delete('/api/rounds/:id', requireAdmin, (req, res) => {
   res.json({ success: deleted });
 });
 
+// ── Game settings ────────────────────────────────────────────────────────────
+// speedScoring: true (default) = faster right answers earn more; false = every right answer scores the same.
+// Anyone may read it (it is not secret); changing it needs the admin password.
+app.get('/api/settings', (_req, res) => {
+  res.json(customRoundsStore.getSettings());
+});
+
+app.patch('/api/settings', requireAdmin, (req, res) => {
+  const speedScoring = (req.body as { speedScoring?: unknown } | undefined)?.speedScoring;
+  if (typeof speedScoring !== 'boolean') {
+    res.status(400).json({ error: 'speedScoring must be true or false' });
+    return;
+  }
+  res.json(customRoundsStore.setSpeedScoring(speedScoring));
+});
+
 // ── Serve built client in production ────────────────────────────────────────
 app.use(express.static(clientDist));
 
@@ -159,6 +175,7 @@ app.use(express.static(clientDist));
 const gameManager = new GameManager(
   (roomCode, event, data) => io.to(roomCode).emit(event, data),
   getAllRounds,
+  { getSpeedScoring: () => customRoundsStore.getSettings().speedScoring },
 );
 
 // Socket payloads come straight from browsers, so never trust their shape.

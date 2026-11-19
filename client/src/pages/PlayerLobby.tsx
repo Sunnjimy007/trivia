@@ -56,7 +56,7 @@ export default function PlayerLobby() {
             <p className="font-extrabold text-ink text-lg">Waiting for host to start...</p>
           </div>
           <p className="text-[#4B3A7C] text-sm font-bold">
-            Get ready! Answer fast for more points 🏆
+            Get ready to play! 🏆
           </p>
         </div>
 

@@ -64,6 +64,59 @@ describe('GameManager', () => {
       assert.equal(calculatePoints(1, 10), 1250);
     });
 
+    it('pays a flat 500 to every right answer when the speed factor is off', () => {
+      assert.equal(calculatePoints(1, 3, false), 500);
+      assert.equal(calculatePoints(3, 3, false), 500);
+      assert.equal(calculatePoints(1, 10, false), 500);
+      assert.equal(calculatePoints(1, 3, true), 375); // on is the default
+    });
+
+    it('gives every right answer the same points in a fair game, and tells the clients', () => {
+      const events: Evt[] = [];
+      const gm = new GameManager((room, event, data) => events.push({ room, event, data }), () => ROUNDS,
+        { questionTimeMs: 30000, getSpeedScoring: () => false });
+      const { roomCode, room } = gm.createGame('host-sock', 'Hosty');
+      ['Ann', 'Ben', 'Cat'].forEach((name, i) => gm.joinGame(roomCode, `p${i}`, name));
+      gm.startGame(roomCode, 'host-sock');
+      gm.advance(roomCode, 'host-sock');
+
+      // Cat is slowest and Ann is wrong, but the two right answers earn the same.
+      gm.submitAnswer(roomCode, 'p1', 'B');
+      gm.submitAnswer(roomCode, 'p0', 'A');
+      gm.submitAnswer(roomCode, 'p2', 'B');
+      mock.timers.tick(600);
+
+      const ended = events.filter((e) => e.event === 'question-ended').at(-1)!.data;
+      const score = Object.fromEntries(ended.scores.map((s: any) => [s.playerName, s.score]));
+      assert.deepEqual(score, { Ann: 0, Ben: 500, Cat: 500 });
+
+      const sent = (name: string) => events.filter((e) => e.event === name).map((e) => e.data.speedScoring);
+      assert.deepEqual(sent('round-intro'), [false]);
+      assert.deepEqual(sent('question-started'), [false]);
+      assert.equal(gm.getSnapshot(room, 'p0', false).speedScoring, false);
+    });
+
+    it('reads the setting when the game starts, then keeps it for the whole game', () => {
+      let speed = true;
+      const events: Evt[] = [];
+      const gm = new GameManager((room, event, data) => events.push({ room, event, data }), () => ROUNDS,
+        { questionTimeMs: 30000, getSpeedScoring: () => speed });
+      const { roomCode } = gm.createGame('host-sock', 'Hosty');
+      ['Ann', 'Ben', 'Cat'].forEach((name, i) => gm.joinGame(roomCode, `p${i}`, name));
+
+      speed = false;                       // switched off in the lobby: counts
+      gm.startGame(roomCode, 'host-sock');
+      speed = true;                        // switched back on mid-game: does not
+      gm.advance(roomCode, 'host-sock');
+      gm.submitAnswer(roomCode, 'p0', 'B');
+      gm.submitAnswer(roomCode, 'p1', 'B');
+      gm.submitAnswer(roomCode, 'p2', 'B');
+      mock.timers.tick(600);
+
+      const ended = events.filter((e) => e.event === 'question-ended').at(-1)!.data;
+      assert.deepEqual(ended.scores.map((s: any) => s.score), [500, 500, 500]);
+    });
+
     it('pays by order of correct answers; wrong answers score nothing', () => {
       const g = inFirstQuestion(); // 3 players, correct answer is B
       assert.deepEqual(g.gm.submitAnswer(g.roomCode, 'p1', 'B'), { success: true });

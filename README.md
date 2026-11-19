@@ -16,6 +16,9 @@ screen; up to 10 players join on their own phones with a 4-letter room code and 
 3. Each question has a **30 second** timer, and ends early once every connected player has answered.
 4. **Scoring** is by speed among the correct answers: with *n* players the first correct answer earns
    *n* × 125 points, the second (*n* − 1) × 125, and so on down to 125. Wrong answers earn nothing.
+   For younger players, switch on **Turn off the speed factor** in **Manage Rounds**: then every right answer
+   earns the same 500 points, however fast. The setting is saved with your rounds, and is fixed for a game when
+   it starts.
 5. The host can give each player **one ±100 adjustment per round** (a bonus or a penalty, never below zero);
    players see a notification when it happens.
 6. After the last round everyone sees the final scoreboard, and **Play Again** returns to the start.
@@ -114,6 +117,9 @@ server/test                 automated tests
 
 **Rounds API** (`/api/rounds`): `GET` the list is public and has no questions. Everything else, including
 `GET /api/rounds/:id`, needs the `x-admin-password` header when `ADMIN_PASSWORD` is set.
+
+**Settings API** (`/api/settings`): `GET` returns `{ "speedScoring": true }` and is public. `PATCH` with
+`{ "speedScoring": false }` turns the speed factor off and needs the admin password when one is set.
 
 **Socket events**
 

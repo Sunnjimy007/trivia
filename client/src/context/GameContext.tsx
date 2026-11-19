@@ -99,6 +99,7 @@ const initialGame: GameState = {
   answers: [],
   scores: [],
   isLastRound: false,
+  speedScoring: true,
 };
 
 const initialState: AppState = {
@@ -142,8 +143,8 @@ type Action =
   | { type: 'GAME_CREATED'; roomCode: string; players: Player[]; myId: string; myName: string }
   | { type: 'JOIN_SUCCESS'; roomCode: string; players: Player[]; myId: string }
   | { type: 'PLAYER_JOINED'; players: Player[] }
-  | { type: 'ROUND_INTRO'; round: RoundInfo; roundIndex: number; totalRounds: number; scores: PlayerScore[] }
-  | { type: 'QUESTION_STARTED'; question: Question; questionIndex: number; totalQuestions: number; roundIndex: number; roundName: string; roundEmoji: string; startTime: number; timeLimit: number }
+  | { type: 'ROUND_INTRO'; round: RoundInfo; roundIndex: number; totalRounds: number; scores: PlayerScore[]; speedScoring?: boolean }
+  | { type: 'QUESTION_STARTED'; question: Question; questionIndex: number; totalQuestions: number; roundIndex: number; roundName: string; roundEmoji: string; startTime: number; timeLimit: number; speedScoring?: boolean }
   | { type: 'ANSWER_CONFIRMED'; optionId: string }
   | { type: 'ANSWER_SUBMITTED'; answeredCount: number; totalPlayers: number; distribution: Record<string, number> }
   | { type: 'QUESTION_ENDED'; correctOptionId: string; answers: PlayerAnswer[]; scores: PlayerScore[]; distribution: Record<string, number> }
@@ -210,6 +211,7 @@ function reducer(state: AppState, action: Action): AppState {
           correctOptionId: s.correctOptionId,
           scores: s.scores,
           isLastRound: s.isLastRound,
+          speedScoring: s.speedScoring ?? true,
         },
       };
     }
@@ -288,6 +290,7 @@ function reducer(state: AppState, action: Action): AppState {
           totalRounds: action.totalRounds,
           scores: action.scores,
           players: state.players,
+          speedScoring: action.speedScoring ?? state.game.speedScoring,
         },
       };
 
@@ -307,6 +310,7 @@ function reducer(state: AppState, action: Action): AppState {
           timeLimit: action.timeLimit,
           answers: [],
           correctOptionId: undefined,
+          speedScoring: action.speedScoring ?? state.game.speedScoring,
         },
       };
 
@@ -461,13 +465,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'PLAYER_JOINED', players: data.players });
     });
 
-    socket.on('round-intro', (data: { round: RoundInfo; roundIndex: number; totalRounds: number; scores: PlayerScore[] }) => {
+    socket.on('round-intro', (data: { round: RoundInfo; roundIndex: number; totalRounds: number; scores: PlayerScore[]; speedScoring?: boolean }) => {
       dispatch({ type: 'ROUND_INTRO', ...data });
     });
 
     socket.on('question-started', (data: {
       question: Question; questionIndex: number; totalQuestions: number;
       roundIndex: number; roundName: string; roundEmoji: string; startTime: number; timeLimit: number;
+      speedScoring?: boolean;
     }) => {
       dispatch({ type: 'QUESTION_STARTED', ...data });
     });

@@ -55,6 +55,15 @@ describe('customRoundsStore', () => {
     assert.deepEqual(saved.disabledRoundIds, []);
   });
 
+  it('keeps the speed factor on for files saved before the setting existed, and saves it when switched off', () => {
+    assert.deepEqual(store.getSettings(), { speedScoring: true }); // the old plain-array file had no settings
+    assert.deepEqual(store.setSpeedScoring(false), { speedScoring: false });
+    assert.equal(JSON.parse(readFileSync(file, 'utf-8')).settings.speedScoring, false);
+    assert.deepEqual(store.getSettings(), { speedScoring: false });
+    store.setSpeedScoring(true);
+    assert.equal(JSON.parse(readFileSync(file, 'utf-8')).settings.speedScoring, true);
+  });
+
   it('leaves no temp files behind after saving', () => {
     store.toggleRound('round2');
     assert.deepEqual(readdirSync(dir), ['custom-rounds.json']);

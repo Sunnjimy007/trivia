@@ -18,10 +18,15 @@ const MAX_NAME_LENGTH = 20;
 const DEFAULT_HOST_GRACE_MS = 90_000;
 const DEFAULT_LOBBY_GRACE_MS = 30_000;
 
+// With the speed factor off, every right answer is worth this many points, however quick.
+const FLAT_POINTS = 500;
+
 export interface GameManagerOptions {
   hostGraceMs?: number;
   lobbyGraceMs?: number;
   questionTimeMs?: number;
+  // Whether faster right answers earn more. Read when a game starts, so changing it mid-game changes nothing.
+  getSpeedScoring?: () => boolean;
 }
 
 function generateRoomCode(): string {
@@ -82,7 +87,9 @@ function getSortedScores(players: Player[]): PlayerScore[] {
     }));
 }
 
-function calculatePoints(answerOrder: number, totalPlayers: number): number {
+function calculatePoints(answerOrder: number, totalPlayers: number, speedScoring = true): number {
+  // Speed factor off: a right answer is a right answer, whoever was quickest.
+  if (!speedScoring) return FLAT_POINTS;
   // 1st: n×125, 2nd: (n-1)×125, ..., last: 1×125
   return Math.round((totalPlayers - answerOrder + 1) * 125);
 }
@@ -102,6 +109,7 @@ class GameManager {
   private hostGraceMs: number;
   private lobbyGraceMs: number;
   private questionTimeMs: number;
+  private getSpeedScoring: () => boolean;
 
   constructor(
     onRoomUpdate: (roomCode: string, event: string, data: unknown) => void,
@@ -113,6 +121,7 @@ class GameManager {
     this.hostGraceMs = options.hostGraceMs ?? DEFAULT_HOST_GRACE_MS;
     this.lobbyGraceMs = options.lobbyGraceMs ?? DEFAULT_LOBBY_GRACE_MS;
     this.questionTimeMs = options.questionTimeMs ?? QUESTION_TIME_LIMIT;
+    this.getSpeedScoring = options.getSpeedScoring ?? (() => true);
   }
 
   createGame(hostId: string, hostName: string): { roomCode: string; room: GameRoom; token: string } {
@@ -145,6 +154,7 @@ class GameManager {
       questionTimer: null,
       correctAnswerOrder: 0,
       adjustedPlayerIds: new Set(),
+      speedScoring: this.getSpeedScoring(),
     };
 
     this.rooms.set(roomCode, room);
@@ -204,6 +214,8 @@ class GameManager {
     room.lobbyGraceTimers.clear();
 
     room.rounds = rounds;
+    // Locked in for the whole game, like the rounds: flipping the setting mid-game can't change the rules.
+    room.speedScoring = this.getSpeedScoring();
     room.phase = 'round_intro';
     room.currentRoundIndex = 0;
     room.currentQuestionIndex = 0;
@@ -214,6 +226,7 @@ class GameManager {
       roundIndex: 0,
       totalRounds: rounds.length,
       scores: getSortedScores(room.players),
+      speedScoring: room.speedScoring,
     });
 
     return { success: true };
@@ -261,6 +274,7 @@ class GameManager {
       roundEmoji: roundInfo.emoji,
       startTime: room.questionStartTime,
       timeLimit: this.questionTimeMs,
+      speedScoring: room.speedScoring,
     });
   }
 
@@ -294,7 +308,7 @@ class GameManager {
       avatar: player.avatar,
       optionId,
       isCorrect,
-      pointsEarned: isCorrect ? calculatePoints(room.correctAnswerOrder, room.players.length) : 0,
+      pointsEarned: isCorrect ? calculatePoints(room.correctAnswerOrder, room.players.length, room.speedScoring) : 0,
       answerOrder: isCorrect ? room.correctAnswerOrder : 0,
     };
 
@@ -397,6 +411,7 @@ class GameManager {
         roundIndex: room.currentRoundIndex,
         totalRounds: rounds.length,
         scores: getSortedScores(room.players),
+        speedScoring: room.speedScoring,
       });
     }
   }
@@ -567,6 +582,7 @@ class GameManager {
       scores: getSortedScores(room.players),
       isLastRound: started ? room.currentRoundIndex >= rounds.length - 1 : false,
       adjustedPlayerIds: [...room.adjustedPlayerIds],
+      speedScoring: room.speedScoring,
     };
   }
 

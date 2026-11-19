@@ -117,19 +117,32 @@ function buildPayload(draft: RoundDraft, existingId?: string) {
 }
 
 // ── Toggle switch ─────────────────────────────────────────────────────────────
+// The picture of a switch, for use inside something that is already a button.
+function SwitchKnob({ on }: { on: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
+                  transition-colors duration-200 ${on ? 'bg-ans-d' : 'bg-ink-4'}`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200
+                    ${on ? 'translate-x-6' : 'translate-x-1'}`}
+      />
+    </span>
+  );
+}
+
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
   return (
     <button
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
-                  transition-colors duration-200 focus:outline-none
-                  ${enabled ? 'bg-ans-d' : 'bg-ink-4'}`}
+      role="switch"
+      aria-checked={enabled}
+      className="focus:outline-none"
       title={enabled ? 'Click to disable this round' : 'Click to enable this round'}
     >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200
-                    ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
-      />
+      <SwitchKnob on={enabled} />
     </button>
   );
 }
@@ -219,6 +232,9 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pwPrompt, setPwPrompt] = useState<{ resolve: (pw: string | null) => void; wrong: boolean } | null>(null);
   const [pwInput, setPwInput] = useState('');
+  // Scoring: do faster right answers earn more? null until the server has told us.
+  const [speedScoring, setSpeedScoring] = useState<boolean | null>(null);
+  const [savingSpeed, setSavingSpeed] = useState(false);
 
   // Shows the password box (a real password field, since the host screen may be on a TV).
   const askPassword = useCallback((wrong: boolean) => new Promise<string | null>((resolve) => {
@@ -259,6 +275,37 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   }, []);
 
   useEffect(() => { fetchRounds(); }, [fetchRounds]);
+
+  useEffect(() => {
+    fetch(`${API}/api/settings`)
+      .then((res) => res.json())
+      .then((s: { speedScoring?: boolean }) => setSpeedScoring(s.speedScoring !== false))
+      .catch(() => setSpeedScoring(null));
+  }, []);
+
+  // ── "Turn off the speed factor" ──
+  async function handleSpeedToggle() {
+    if (speedScoring === null || savingSpeed) return;
+    setSavingSpeed(true);
+    setMsg(null);
+    try {
+      const res = await adminFetch(`${API}/api/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speedScoring: !speedScoring }),
+      });
+      if (res.ok) {
+        const s = await res.json();
+        setSpeedScoring(s.speedScoring !== false);
+      } else {
+        setMsg({ ok: false, text: 'Could not change the scoring (wrong password?).' });
+      }
+    } catch {
+      setMsg({ ok: false, text: 'Could not reach server.' });
+    } finally {
+      setSavingSpeed(false);
+    }
+  }
 
   // ── Toggle enabled/disabled ──
   async function handleToggle(id: string) {
@@ -448,6 +495,33 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                   {msg.text}
                 </div>
               )}
+
+              {/* Scoring: the speed factor can be switched off so every right answer scores the same. */}
+              {speedScoring !== null && (
+                <button
+                  onClick={handleSpeedToggle}
+                  disabled={savingSpeed}
+                  role="switch"
+                  aria-checked={!speedScoring}
+                  className={`w-full flex items-center gap-3 text-left rounded-2xl border p-3 sm:p-4 min-h-[64px]
+                              transition-colors disabled:opacity-60
+                              ${speedScoring ? 'bg-ink-3/60 border-ink-4' : 'bg-ans-d/15 border-ans-d/60'}`}
+                >
+                  <span className="text-2xl sm:text-3xl flex-shrink-0" aria-hidden="true">⚖️</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-chalk font-bold text-sm sm:text-base">Turn off the speed factor</span>
+                    <span className="block text-soft text-xs mt-0.5">
+                      {speedScoring
+                        ? 'Right now, faster right answers earn more points. Switch on to make every right answer worth the same.'
+                        : 'On: every right answer scores 500 points, however fast. Fairer for younger players. Applies to games that have not started yet.'}
+                    </span>
+                  </span>
+                  {savingSpeed
+                    ? <span className="w-11 h-6 rounded-full bg-ink-4 animate-pulse flex-shrink-0" />
+                    : <SwitchKnob on={!speedScoring} />}
+                </button>
+              )}
+
               {loading ? (
                 <div className="text-center py-12">
                   <p className="text-soft font-bold animate-pulse">Loading rounds...</p>

@@ -158,7 +158,9 @@ export default function PlayerGame() {
 
         {!hasAnswered && (
           <p className="text-soft text-center text-xs font-bold flex-shrink-0 pb-1">
-            Tap fast: the first correct answer wins the most points! ⚡
+            {game.speedScoring
+              ? 'Tap fast: the first correct answer wins the most points! ⚡'
+              : 'Take your time: every right answer scores the same! 😊'}
           </p>
         )}
       </div>
@@ -182,7 +184,7 @@ export default function PlayerGame() {
               <div className="text-4xl mb-1" aria-hidden="true">🎉</div>
               <h1 className="font-display text-3xl text-[#047857]">Correct!</h1>
               <p className="text-ink font-extrabold text-xl mt-1 tabular-nums">+{myPoints.toLocaleString()} pts</p>
-              {myAnswerResult.answerOrder === 1 && (
+              {game.speedScoring && myAnswerResult.answerOrder === 1 && (
                 <p className="text-[#7A4D00] font-extrabold text-sm mt-1">⚡ First to answer!</p>
               )}
             </>

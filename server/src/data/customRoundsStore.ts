@@ -12,13 +12,19 @@ const DATA_DIR = process.env.DATA_DIR
 
 export const STORE_PATH = path.join(DATA_DIR, 'custom-rounds.json');
 
+export interface Settings {
+  // true: right answers earn more the faster they come in. false: every right answer scores the same.
+  speedScoring: boolean;
+}
+
 interface StoreData {
   customRounds: Round[];
   disabledRoundIds: string[];
+  settings: Settings;
 }
 
 function emptyStore(): StoreData {
-  return { customRounds: [], disabledRoundIds: [] };
+  return { customRounds: [], disabledRoundIds: [], settings: { speedScoring: true } };
 }
 
 function load(): StoreData {
@@ -26,10 +32,12 @@ function load(): StoreData {
   try {
     const raw = JSON.parse(readFileSync(STORE_PATH, 'utf-8'));
     // Migrate old format (plain array) to new format
-    if (Array.isArray(raw)) return { customRounds: raw, disabledRoundIds: [] };
+    if (Array.isArray(raw)) return { ...emptyStore(), customRounds: raw };
     return {
       customRounds: Array.isArray(raw?.customRounds) ? raw.customRounds : [],
       disabledRoundIds: Array.isArray(raw?.disabledRoundIds) ? raw.disabledRoundIds : [],
+      // Files saved before this setting existed have none: keep the speed factor on, as it always was.
+      settings: { speedScoring: raw?.settings?.speedScoring !== false },
     };
   } catch (err) {
     // Keep the unreadable file instead of silently overwriting it on the next save.
@@ -61,6 +69,16 @@ export function getCustomRounds(): Round[] {
 
 export function getDisabledRoundIds(): string[] {
   return store.disabledRoundIds;
+}
+
+export function getSettings(): Settings {
+  return { ...store.settings };
+}
+
+export function setSpeedScoring(on: boolean): Settings {
+  store.settings = { ...store.settings, speedScoring: on };
+  persist();
+  return getSettings();
 }
 
 export function isRoundEnabled(id: string): boolean {

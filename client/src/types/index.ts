@@ -84,6 +84,7 @@ export interface RoomSnapshot {
   scores: PlayerScore[];
   isLastRound: boolean;
   adjustedPlayerIds: string[];
+  speedScoring: boolean;
 }
 
 export interface GameState {
@@ -102,4 +103,6 @@ export interface GameState {
   correctOptionId?: string;
   scores: PlayerScore[];
   isLastRound: boolean;
+  // Do faster right answers earn more? The admin can turn this off for fairer play. Fixed when the game starts.
+  speedScoring: boolean;
 }

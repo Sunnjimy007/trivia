@@ -54,6 +54,8 @@ export interface GameRoom {
   questionTimer: Timer | null;
   correctAnswerOrder: number;
   adjustedPlayerIds: Set<string>;
+  // Do faster right answers earn more? Fixed when the game starts (see Settings in customRoundsStore).
+  speedScoring: boolean;
 }
 
 export interface QuestionForClient {
@@ -103,4 +105,5 @@ export interface RoomSnapshot {
   scores: PlayerScore[];
   isLastRound: boolean;
   adjustedPlayerIds: string[];
+  speedScoring: boolean;
 }
