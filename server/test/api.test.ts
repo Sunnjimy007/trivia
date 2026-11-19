@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { startServer, type RunningServer } from './helpers/server';
+import { rounds as builtInRounds } from '../src/data/questions';
 
 const PASSWORD = 'correct horse';
 
@@ -60,7 +61,7 @@ describe('rounds API with ADMIN_PASSWORD set', () => {
     const res = await api('/api/rounds', { pw: null });
     assert.equal(res.status, 200);
     const list = await res.json();
-    assert.equal(list.length, 7);
+    assert.equal(list.length, builtInRounds.length);
     assert.ok(list.every((r: any) => r.questions === undefined && r.questionCount > 0));
     assert.ok(!JSON.stringify(list).includes('correctOptionId'));
   });
