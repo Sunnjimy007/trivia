@@ -56,19 +56,24 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/socket.io') || url.pathname.startsWith('/api/')) return; // live data
 
   // Page loads: network first, so a new deploy is picked up straight away.
-  // Fall back to the cached shell if offline or the server is returning errors.
+  // Fall back to the saved copy if offline or the server is returning errors.
+  // Each page keeps its own saved copy: the game shell is saved as '/' (it serves every game
+  // path) and the landing page as '/welcome.html'. They must never stand in for each other:
+  // the game redirects first-time visitors to the landing page, so serving the game's shell
+  // for the landing page would send the browser round in a circle.
   if (req.mode === 'navigate') {
+    const key = url.pathname === '/welcome.html' ? '/welcome.html' : '/';
     event.respondWith(
       fetch(req)
         .then((res) => {
           if (res.ok) {
             const copy = res.clone();
-            caches.open(SHELL_CACHE).then((cache) => cache.put('/', copy));
+            caches.open(SHELL_CACHE).then((cache) => cache.put(key, copy));
             return res;
           }
-          return caches.match('/').then((shell) => shell || res);
+          return caches.match(key).then((saved) => saved || res);
         })
-        .catch(() => caches.match('/').then((shell) => shell || Response.error())),
+        .catch(() => caches.match(key).then((saved) => saved || Response.error())),
     );
     return;
   }

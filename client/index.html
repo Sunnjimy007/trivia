@@ -2,6 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- First visit in a normal browser tab: show the landing page (public/welcome.html).
+         Skipped for the installed app, for anyone with a saved game, and for links from the
+         landing page itself (/?play=host, /?play=join). Runs before anything renders. -->
+    <script>
+      (function () {
+        try {
+          if (/[?&]play=/.test(location.search)) { sessionStorage.setItem('trivia-skip-landing', '1'); return; }
+          if (sessionStorage.getItem('trivia-skip-landing')) return;
+          if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
+          if (sessionStorage.getItem('trivia-session') || localStorage.getItem('trivia-session')) return;
+          location.replace('/welcome.html');
+        } catch (e) { /* storage blocked: just load the game */ }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Amali's Trivia Game 🎉</title>

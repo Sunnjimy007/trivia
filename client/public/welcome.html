@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Amali's Trivia Game 🎉 Game night, scored live</title>
+<meta name="description" content="A multiplayer trivia game for family and friends. One host, up to 10 players, everyone answers on their phone.">
+<meta name="theme-color" content="#FFC531">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/welcome/scrollcraft.css">
+<link rel="stylesheet" href="/welcome/landing.css">
+<noscript><style>[data-sc-in],[data-sc-stagger]>*{opacity:1!important;transform:none!important}[data-sc-reveal]{clip-path:none!important}.pf-bars li i{transform:none!important}</style></noscript>
+</head>
+<body>
+
+<a class="pf-skip" href="#main">Skip to content</a>
+
+<!-- ============ CHROME: a loud bar, and the scoreboard that drops into it ============ -->
+<header class="pf-bar">
+  <a class="pf-mark" href="#top" aria-label="Amali's Trivia Game, back to the top">
+    <svg class="pf-mark__ico" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M3.5 28.5 11 9.5l11.5 11.5z" fill="#150A33"/>
+      <path d="m7.6 20.2 6.2 6.2M10.2 14.4l9.2 9.2" stroke="#FFC531" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="21.5" cy="7" r="2.4" fill="#E11D48"/><circle cx="16.5" cy="4" r="1.7" fill="#10B981"/>
+      <rect x="25" y="11.5" width="4.2" height="4.2" rx="1" fill="#2563EB" transform="rotate(24 27 13.6)"/>
+    </svg>
+    <span class="pf-mark__txt">Amali's Trivia</span>
+  </a>
+  <nav class="pf-bar__cta" aria-label="Start playing">
+    <a class="pf-btn pf-btn--ghost" href="/?play=join">Join a game</a>
+    <a class="pf-btn pf-btn--ink" href="/?play=host">Host a game</a>
+  </nav>
+</header>
+
+<div class="pf-board" id="board" aria-hidden="true">
+  <p class="pf-board__label">Sample game</p>
+  <ol class="pf-board__chips" id="boardChips"></ol>
+</div>
+
+<main id="main">
+
+<!-- ============ 1 · PULSE ============ -->
+<section class="pf-hero g-ink" id="top" aria-labelledby="h1">
+  <div class="pf-planes" aria-hidden="true">
+    <div class="pf-plane pf-plane--far" style="--k:6"><div class="pf-drift" data-confetti="far"></div></div>
+    <div class="pf-plane pf-plane--mid" style="--k:14">
+      <div class="pf-drift" data-confetti="mid">
+        <svg class="pf-ribbon pf-ribbon--m1" viewBox="0 0 1200 800" preserveAspectRatio="none"><path d="M-60 560C160 430 330 700 560 560S930 380 1260 520" /></svg>
+        <svg class="pf-ribbon pf-ribbon--m2" viewBox="0 0 1200 800" preserveAspectRatio="none"><path d="M-80 180C140 60 360 300 620 170S980 40 1280 160" /></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="pf-hero__copy sc-wrap">
+    <h1 class="pf-h1" id="h1">Game night, scored live.</h1>
+    <p class="pf-lede">One screen hosts. Everyone else answers on their phone. Faster right answers earn more points.</p>
+    <div class="pf-cta-row">
+      <a class="pf-btn pf-btn--yellow pf-btn--xl" href="/?play=host">Host a game</a>
+      <a class="pf-btn pf-btn--outline pf-btn--xl" href="/?play=join">Join a game</a>
+    </div>
+  </div>
+
+  <div class="pf-planes pf-planes--front" aria-hidden="true">
+    <div class="pf-plane pf-plane--tiles" style="--k:26">
+      <div class="pf-drift">
+        <div class="pf-tile pf-tile--a"><span>A</span></div>
+        <div class="pf-tile pf-tile--b"><span>B</span></div>
+        <div class="pf-tile pf-tile--c"><span>C</span></div>
+        <div class="pf-tile pf-tile--d"><span>D</span></div>
+      </div>
+    </div>
+    <div class="pf-plane pf-plane--near" style="--k:48">
+      <div class="pf-drift" data-confetti="near">
+        <svg class="pf-ribbon pf-ribbon--n1" viewBox="0 0 600 600" preserveAspectRatio="none"><path d="M-30 470C120 380 230 560 380 470S560 330 650 400" /></svg>
+        <svg class="pf-ribbon pf-ribbon--n2" viewBox="0 0 600 600" preserveAspectRatio="none"><path d="M650 90C500 30 430 190 300 130S90 60 -40 130" /></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 · CLARITY ============ -->
+<section class="pf-s g-yellow pf-two" id="how" aria-labelledby="two-h">
+  <div class="sc-wrap pf-two__grid">
+    <div class="pf-two__copy" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="two-h">One screen runs the show.</h2>
+      <p class="pf-p">The host is the Game Master, on a laptop or a TV. Everyone else plays on their own phone.</p>
+      <p class="pf-big"><span data-sc-count="0 10">0</span> <small>players at a time</small></p>
+    </div>
+    <div class="pf-two__art" data-sc-in aria-hidden="true">
+      <svg viewBox="0 0 700 430" role="presentation">
+        <rect x="14" y="30" width="410" height="262" rx="28" fill="#150A33"/>
+        <rect x="36" y="52" width="366" height="218" rx="14" fill="#2B1768"/>
+        <text x="219" y="190" text-anchor="middle" font-family="Fredoka One, Nunito, sans-serif" font-size="128" fill="#FFC531">?</text>
+        <rect x="58" y="226" width="74" height="28" rx="8" fill="#E11D48"/><rect x="142" y="226" width="74" height="28" rx="8" fill="#2563EB"/>
+        <rect x="226" y="226" width="74" height="28" rx="8" fill="#F59E0B"/><rect x="310" y="226" width="74" height="28" rx="8" fill="#10B981"/>
+        <rect x="168" y="292" width="102" height="22" fill="#150A33"/><rect x="118" y="312" width="202" height="16" rx="8" fill="#150A33"/>
+        <g transform="rotate(-9 440 300)"><rect x="396" y="150" width="120" height="236" rx="26" fill="#150A33"/><rect x="408" y="166" width="96" height="198" rx="14" fill="#2B1768"/>
+          <rect x="414" y="236" width="40" height="40" rx="9" fill="#E11D48"/><rect x="458" y="236" width="40" height="40" rx="9" fill="#2563EB"/><rect x="414" y="282" width="40" height="40" rx="9" fill="#F59E0B"/><rect x="458" y="282" width="40" height="40" rx="9" fill="#10B981"/></g>
+        <g transform="rotate(5 540 300)"><rect x="486" y="120" width="120" height="236" rx="26" fill="#150A33"/><rect x="498" y="136" width="96" height="198" rx="14" fill="#2B1768"/>
+          <rect x="504" y="206" width="40" height="40" rx="9" fill="#E11D48"/><rect x="548" y="206" width="40" height="40" rx="9" fill="#2563EB"/><rect x="504" y="252" width="40" height="40" rx="9" fill="#F59E0B"/><rect x="548" y="252" width="40" height="40" rx="9" fill="#10B981"/></g>
+        <g transform="rotate(14 590 340)"><rect x="520" y="196" width="108" height="212" rx="24" fill="#150A33"/><rect x="531" y="211" width="86" height="178" rx="13" fill="#2B1768"/>
+          <rect x="537" y="274" width="36" height="36" rx="8" fill="#E11D48"/><rect x="577" y="274" width="36" height="36" rx="8" fill="#2563EB"/><rect x="537" y="316" width="36" height="36" rx="8" fill="#F59E0B"/><rect x="577" y="316" width="36" height="36" rx="8" fill="#10B981"/></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 · EASE (the silence before the peak) ============ -->
+<section class="pf-s g-chalk pf-code" id="code" data-sc-act="flow" aria-labelledby="code-h">
+  <div class="sc-wrap pf-code__in">
+    <div class="pf-code__copy" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="code-h">Join with four letters.</h2>
+      <p class="pf-p">The host's screen shows a room code. Type it on your phone, pick a name, and you're in.</p>
+    </div>
+    <div class="pf-code__demo" data-sc-reveal="up" data-sc-reveal-at="0.1 0.36">
+      <p class="pf-cap">An example room code</p>
+      <p class="pf-code__tiles" aria-label="An example room code: S, H, 2, A"><b>s</b><b>h</b><b>2</b><b>a</b></p>
+    </div>
+    <form class="pf-code__form" action="/" method="get" data-sc-in>
+      <input type="hidden" name="play" value="join">
+      <label class="pf-p" for="code-in">Got a code from a host?</label>
+      <div class="pf-code__row">
+        <input id="code-in" name="code" type="text" maxlength="4" minlength="4" pattern="[A-Za-z0-9]{4}" required
+               autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. sh2a">
+        <button class="pf-btn pf-btn--ink" type="submit">Join a game</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ============ 4 · PRESSURE (the peak) ============ -->
+<section class="pf-s g-ink pf-q" id="round" aria-labelledby="q-h">
+  <div class="sc-wrap pf-q__in">
+    <p class="pf-tag" data-sc-in>A real question from the game, with three sample players</p>
+    <h2 class="pf-q__text" id="q-h" data-sc-in>What is the largest ocean in the world?</h2>
+    <div class="pf-fuse" aria-hidden="true"><span class="pf-fuse__bar" id="fuse"></span></div>
+    <p class="pf-clock"><b id="clock">30</b> seconds</p>
+    <div class="pf-answers" id="answers" role="group" aria-label="Answers" data-sc-in data-sc-stagger="60">
+      <button class="pf-ans pf-ans--a" type="button" data-opt="A"><span class="pf-ans__k">A</span><span class="pf-ans__t">Indian Ocean</span></button>
+      <button class="pf-ans pf-ans--b" type="button" data-opt="B"><span class="pf-ans__k">B</span><span class="pf-ans__t">The Pacific Ocean</span></button>
+      <button class="pf-ans pf-ans--c" type="button" data-opt="C"><span class="pf-ans__k">C</span><span class="pf-ans__t">Arctic Ocean</span></button>
+      <button class="pf-ans pf-ans--d" type="button" data-opt="D"><span class="pf-ans__k">D</span><span class="pf-ans__t">Atlantic Ocean</span></button>
+    </div>
+    <p class="pf-result" id="result" role="status" aria-live="polite">Tap an answer before the sample players do. You can press A, B, C or D too.</p>
+    <button class="pf-link pf-again" type="button" id="again" hidden>Race them again</button>
+  </div>
+</section>
+
+<!-- ============ 5 · REWARD ============ -->
+<section class="pf-s g-yellow pf-points" id="points" aria-labelledby="pts-h">
+  <div class="sc-wrap pf-points__grid">
+    <div class="pf-points__copy" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="pts-h">Faster right answers score more.</h2>
+      <p class="pf-p">With 4 players, the first correct answer earns 4 × 125 points. The next earns 3 × 125, then 2 × 125, then 125. Wrong answers earn nothing.</p>
+      <p class="pf-p pf-points__you" id="youLine" hidden></p>
+    </div>
+    <ol class="pf-bars" aria-label="Points by order of correct answer" data-sc-in>
+      <li style="--w:100%"><span>1st</span><i></i><b>500</b></li>
+      <li style="--w:75%"><span>2nd</span><i></i><b>375</b></li>
+      <li style="--w:50%"><span>3rd</span><i></i><b>250</b></li>
+      <li style="--w:25%"><span>4th</span><i></i><b>125</b></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ 6 · MISCHIEF ============ -->
+<section class="pf-s g-ink pf-gm" id="master" aria-labelledby="gm-h">
+  <div class="sc-wrap pf-gm__grid">
+    <div class="pf-gm__panel" data-sc-in>
+      <p class="pf-tag">A sample player. Try it.</p>
+      <div class="pf-gm__row">
+        <span class="pf-av" aria-hidden="true">🐻</span>
+        <span class="pf-gm__name">Dev</span>
+        <output class="pf-gm__score" id="gmScore" aria-live="polite">250</output>
+      </div>
+      <div class="pf-gm__btns">
+        <button class="pf-btn pf-btn--rose" type="button" id="gmMinus">−100</button>
+        <button class="pf-btn pf-btn--green" type="button" id="gmPlus">+100</button>
+      </div>
+      <p class="pf-gm__hint" id="gmHint" role="status" aria-live="polite">One adjustment per player, per round.</p>
+      <button class="pf-link" type="button" id="gmNext" hidden>Start the next round</button>
+    </div>
+    <div class="pf-gm__copy" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="gm-h">Be the Game Master.</h2>
+      <p class="pf-p">Give any player 100 bonus points, or take 100 away. Once per player, every round. Scores never drop below zero.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 · ABUNDANCE ============ -->
+<section class="pf-s g-chalk pf-rounds" id="rounds" data-sc-act="flow" aria-labelledby="rd-h">
+  <div class="sc-wrap">
+    <div class="pf-rounds__head" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="rd-h">Seven rounds in the box.</h2>
+      <p class="pf-p">Switch any of them off before you start.</p>
+    </div>
+    <ul class="pf-stamps" data-sc-reveal="up" data-sc-reveal-at="0.08 0.34">
+      <li class="pf-stamp pf-stamp--1"><span aria-hidden="true">🌍</span>General Knowledge</li>
+      <li class="pf-stamp pf-stamp--2"><span aria-hidden="true">🦘</span>Australian Animals</li>
+      <li class="pf-stamp pf-stamp--3"><span aria-hidden="true">🐾</span>Animals</li>
+      <li class="pf-stamp pf-stamp--4"><span aria-hidden="true">🗺️</span>Countries</li>
+      <li class="pf-stamp pf-stamp--5"><span aria-hidden="true">⚽</span>Sports</li>
+      <li class="pf-stamp pf-stamp--6"><span aria-hidden="true">🧭</span>Geography</li>
+      <li class="pf-stamp pf-stamp--7"><span aria-hidden="true">🪔</span>Diwali</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 8 · INTIMACY ============ -->
+<section class="pf-s g-yellow pf-own" id="own" data-sc-act="flow" aria-labelledby="own-h">
+  <div class="sc-wrap pf-own__grid">
+    <div class="pf-card" data-sc-reveal="left" data-sc-reveal-at="0.08 0.36" aria-hidden="true">
+      <p class="pf-card__t">Your round</p>
+      <p class="pf-card__q">What did we eat on the first night of the trip?</p>
+      <ul class="pf-card__a">
+        <li><b>A</b>Noodles</li><li class="is-right"><b>B</b>Fish and chips</li><li><b>C</b>Pizza</li><li><b>D</b>Dumplings</li>
+      </ul>
+    </div>
+    <div class="pf-own__copy" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="own-h">Add your family's questions.</h2>
+      <p class="pf-p">Write your own rounds: a question, four answers, one right one. Edit or delete them any time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9 · RELIEF ============ -->
+<section class="pf-s g-ink pf-back" id="back" data-sc-act="flow" aria-labelledby="back-h">
+  <div class="sc-wrap pf-back__grid">
+    <div class="pf-back__copy" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="back-h">Phone died? You're still in.</h2>
+      <p class="pf-p">Refresh the page or lose signal and you take your seat back, with your score and your answer. If the host drops, the room waits 90 seconds for them.</p>
+    </div>
+    <div class="pf-seat" id="seat" data-state="in" data-sc-reveal="right" data-sc-reveal-at="0.08 0.36" role="img"
+         aria-label="Illustration of a player's seat: connection lost, reconnecting, then back in with the same score">
+      <div class="pf-seat__who"><span class="pf-av" aria-hidden="true">🦁</span><b>You</b></div>
+      <output class="pf-seat__pts">375</output>
+      <p class="pf-seat__state" id="seatState">In the game</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 · OWNERSHIP ============ -->
+<section class="pf-s g-chalk pf-install" id="install" aria-labelledby="inst-h">
+  <div class="sc-wrap pf-install__grid">
+    <div class="pf-install__copy" data-sc-in data-sc-stagger="50">
+      <h2 class="pf-h2" id="inst-h">Keep it on your home screen.</h2>
+      <p class="pf-p">Add it from your browser's share or menu button and it opens full screen, like an app. Playing still needs a connection.</p>
+    </div>
+    <div class="pf-home" data-sc-in aria-hidden="true">
+      <i></i><i></i><i></i><i></i>
+      <figure><img src="/icons/icon-192.png" width="192" height="192" alt=""><figcaption>Amali's Trivia</figcaption></figure>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11 · RESOLVE ============ -->
+<section class="pf-s g-ink pf-close" id="start" aria-labelledby="close-h">
+  <div class="sc-wrap pf-close__in">
+    <h2 class="pf-close__h" id="close-h" data-sc-in>Who's hosting?</h2>
+    <div class="pf-close__btns" data-sc-in>
+      <a class="pf-btn pf-btn--yellow pf-btn--xxl" href="/?play=host">Host a game</a>
+      <a class="pf-btn pf-btn--outline pf-btn--xxl" href="/?play=join">Join a game</a>
+    </div>
+    <p class="pf-foot">Amali's Trivia Game. Up to 10 players. 30 seconds a question.</p>
+  </div>
+</section>
+
+</main>
+
+<script src="/welcome/scrollcraft.js"></script>
+<script src="/welcome/landing.js"></script>
+</body>
+</html>

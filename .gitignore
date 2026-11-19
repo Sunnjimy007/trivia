@@ -10,3 +10,6 @@ server/custom-rounds.json
 # OS
 .DS_Store
 Thumbs.db
+
+# scroll-craft working files (screenshots); BRIEF.md and FINGERPRINTS.md are kept
+scrollcraft/lab/

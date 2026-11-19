@@ -37,6 +37,22 @@ joins and uses it to take its old seat back, in the same phase, with its score a
 - If the **host** drops, players see a "host lost connection" banner and the room stays open for 90 seconds.
 - If a game no longer exists (it ended, or the server restarted), the browser returns to the start screen.
 
+## The landing page
+
+First-time visitors in a normal browser tab see a scroll-driven landing page (`client/public/welcome.html`
+and `client/public/welcome/`) before the game. It is plain static HTML, CSS and JS, separate from the React app,
+so it can be edited without rebuilding anything but the client.
+
+- A small script at the top of `client/index.html` sends visitors to `/welcome.html` unless they are in the
+  installed app, already have a saved game, or arrived from the landing page itself.
+- Its buttons open the game directly: `/?play=host` (host form), `/?play=join` (join) and
+  `/?play=join&code=abcd` (join, with the room code already filled in).
+- One section is a playable round: a real question from the game raced against three clearly labelled sample
+  players, using the game's actual scoring rule. The scoreboard drops into the page header while it runs.
+- The scroll effects come from the scroll-craft engine (`welcome/scrollcraft.js` and `.css`, unmodified). Everything
+  page-specific is in `welcome/landing.js` and `welcome/landing.css`. The design brief is in
+  `scrollcraft/builds/landing/BRIEF.md`.
+
 ## Running locally
 
 You need Node.js 20 or newer (22+ to run the tests).

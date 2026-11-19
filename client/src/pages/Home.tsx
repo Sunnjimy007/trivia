@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useGame } from '../context/GameContext';
 
-export default function Home({ onJoin }: { onJoin: () => void }) {
+export default function Home({ onJoin, startInHostMode = false }: { onJoin: () => void; startInHostMode?: boolean }) {
   const { state, createGame, setError } = useGame();
-  const [mode, setMode] = useState<'choose' | 'host'>('choose');
+  const [mode, setMode] = useState<'choose' | 'host'>(startInHostMode ? 'host' : 'choose');
   const [hostName, setHostName] = useState('');
 
   function handleCreateGame() {

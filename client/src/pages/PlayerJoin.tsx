@@ -3,13 +3,15 @@ import { useGame } from '../context/GameContext';
 
 interface PlayerJoinProps {
   onBack: () => void;
+  // A room code typed on the landing page: skip straight to asking for a name.
+  initialCode?: string;
 }
 
-export default function PlayerJoin({ onBack }: PlayerJoinProps) {
+export default function PlayerJoin({ onBack, initialCode = '' }: PlayerJoinProps) {
   const { state, joinGame, setError } = useGame();
-  const [roomCode, setRoomCode] = useState('');
+  const [roomCode, setRoomCode] = useState(initialCode);
   const [playerName, setPlayerName] = useState('');
-  const [step, setStep] = useState<'code' | 'name'>('code');
+  const [step, setStep] = useState<'code' | 'name'>(initialCode ? 'name' : 'code');
 
   function handleCodeSubmit() {
     if (roomCode.trim().length !== 4) {

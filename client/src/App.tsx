@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import ConnectionBanner from './components/ConnectionBanner';
 import Home from './pages/Home';
@@ -52,9 +52,31 @@ function ResumePrompt({ roomCode, role }: { roomCode: string; role: 'host' | 'pl
   );
 }
 
+// Where the landing page sent the visitor: /?play=host, /?play=join or /?play=join&code=abcd
+function readIntent(): { play: 'host' | 'join' | null; code: string } {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const play = params.get('play');
+    const code = (params.get('code') ?? '').trim();
+    return {
+      play: play === 'host' || play === 'join' ? play : null,
+      code: /^[a-z0-9]{4}$/i.test(code) ? code : '',
+    };
+  } catch {
+    return { play: null, code: '' };
+  }
+}
+
 function Page() {
   const { state } = useGame();
-  const [showJoin, setShowJoin] = useState(false);
+  const [intent] = useState(readIntent);
+  const [showJoin, setShowJoin] = useState(intent.play === 'join');
+  const [startCode, setStartCode] = useState(intent.code);
+
+  // Keep the address bar tidy once we have read where the visitor wanted to go.
+  useEffect(() => {
+    if (intent.play) window.history.replaceState(null, '', window.location.pathname);
+  }, [intent.play]);
 
   // Route based on app view state
   const { view, isHost } = state;
@@ -66,8 +88,8 @@ function Page() {
 
   if (view === 'home') {
     return showJoin
-      ? <PlayerJoin onBack={() => setShowJoin(false)} />
-      : <Home onJoin={() => setShowJoin(true)} />;
+      ? <PlayerJoin initialCode={startCode} onBack={() => { setShowJoin(false); setStartCode(''); }} />
+      : <Home onJoin={() => setShowJoin(true)} startInHostMode={intent.play === 'host'} />;
   }
 
   if (view === 'host_lobby') return <HostLobby />;

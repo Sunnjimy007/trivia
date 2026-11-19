@@ -120,6 +120,36 @@ describe('service worker (client/public/sw.js)', () => {
     assert.equal(await (await erroring.request('/', { mode: 'navigate' }))!.text(), 'saved shell');
   });
 
+  it('keeps the landing page and the game shell apart', async () => {
+    let up = true;
+    const w = loadWorker((req) => {
+      if (!up) throw new TypeError('offline');
+      return new Response(new URL(req.url).pathname === '/welcome.html' ? 'landing page' : 'game shell');
+    });
+    await w.request('/', { mode: 'navigate' });
+    await w.request('/welcome.html', { mode: 'navigate' });
+    // visiting the landing page must not overwrite the saved game shell
+    assert.equal(await (await w.caches.match('/'))!.text(), 'game shell');
+    assert.equal(await (await w.caches.match('/welcome.html'))!.text(), 'landing page');
+
+    up = false;
+    assert.equal(await (await w.request('/welcome.html', { mode: 'navigate' }))!.text(), 'landing page');
+    assert.equal(await (await w.request('/', { mode: 'navigate' }))!.text(), 'game shell');
+    assert.equal(await (await w.request('/anything/else', { mode: 'navigate' }))!.text(), 'game shell');
+
+    // a landing page that was never saved is an error, never the game shell
+    const fresh = loadWorker(() => { throw new TypeError('offline'); });
+    await fresh.caches.open('trivia-shell-v1').then((c) => c.put('/', new Response('game shell')));
+    assert.equal((await fresh.request('/welcome.html', { mode: 'navigate' }))!.type, 'error');
+  });
+
+  it('leaves the landing page assets to the browser', async () => {
+    const w = loadWorker();
+    assert.equal(await w.request('/welcome/landing.js'), null);
+    assert.equal(await w.request('/welcome/scrollcraft.css'), null);
+    assert.deepEqual(w.state.fetchCalls, []);
+  });
+
   it('does not invent a page it never saved', async () => {
     const offline = loadWorker(() => { throw new TypeError('offline'); });
     assert.equal((await offline.request('/', { mode: 'navigate' }))!.type, 'error');
