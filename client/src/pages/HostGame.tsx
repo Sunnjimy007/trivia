@@ -454,19 +454,28 @@ export default function HostGame() {
                         </span>
                       </div>
                       {whoChose.length > 0 && (
-                        <div className="relative flex flex-wrap gap-1">
-                          {whoChose.map((a) => (
-                            <div
-                              key={a.playerId}
-                              className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold
-                                          ${a.isCorrect ? 'bg-ink/20 text-ink' : 'bg-ink-3 text-soft'}`}
-                            >
-                              <span>{a.avatar}</span>
-                              {a.isCorrect && (
-                                <span className="text-sun font-display">+{a.pointsEarned}</span>
-                              )}
-                            </div>
-                          ))}
+                        <div className="relative flex flex-wrap content-start gap-1.5 min-h-0 overflow-y-auto">
+                          {/* The right answer lists everyone who got it, quickest first, with their points. */}
+                          {[...whoChose].sort((x, y) => x.answerOrder - y.answerOrder).map((a) =>
+                            a.isCorrect ? (
+                              <div
+                                key={a.playerId}
+                                className="flex items-center gap-1.5 max-w-full rounded-full bg-ink/20 text-ink
+                                           pl-1.5 pr-2.5 py-1 text-sm sm:text-base font-extrabold"
+                              >
+                                <span aria-hidden="true">{a.avatar}</span>
+                                <span className="truncate">{a.playerName}</span>
+                                <span className="font-display tabular-nums flex-shrink-0">+{a.pointsEarned}</span>
+                              </div>
+                            ) : (
+                              <div
+                                key={a.playerId}
+                                className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold bg-ink-3 text-soft"
+                              >
+                                <span>{a.avatar}</span>
+                              </div>
+                            ),
+                          )}
                         </div>
                       )}
                     </div>
