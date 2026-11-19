@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import Scoreboard from '../components/Scoreboard';
+import Podium from '../components/Podium';
 import Timer from '../components/Timer';
 import Confetti from '../components/Confetti';
 
@@ -224,20 +225,36 @@ export default function PlayerGame() {
   // ── Round summary ────────────────────────────────────────────────────────
   if (game.phase === 'round_summary') {
     const myRank = game.scores.find((s) => s.playerId === myId)?.rank ?? 0;
+    // The same podium the host sees on the big screen, with the player's own spot marked "You".
     return (
-      <div className="screen ground-sun overflow-y-auto">
+      <div className="screen overflow-y-auto">
         <AdjustmentToast adjustment={lastAdjustment} />
-        <div className="w-full max-w-sm flex flex-col gap-4 animate-slide-up py-4">
-          <div className="text-center">
-            <div className="text-5xl mb-2" aria-hidden="true">{game.currentRound?.emoji}</div>
-            <h1 className="font-display text-4xl sm:text-5xl text-ink">Round complete!</h1>
-            <p className="text-[#34206A] text-lg font-extrabold mt-1">You're #{myRank} 🏆</p>
-            <p className="text-ink font-display text-3xl mt-1 tabular-nums">{myCurrentScore.toLocaleString()} pts</p>
+        <div className="w-full max-w-sm flex flex-col items-center gap-5 py-4">
+          <div className="text-center animate-bounce-in">
+            <div className="text-5xl mb-3" aria-hidden="true">{game.currentRound?.emoji}</div>
+            <div className="inline-block bg-white/10 border border-ink-4 rounded-full px-4 py-1.5 mb-3">
+              <span className="text-soft font-bold text-xs uppercase tracking-widest">
+                Round {game.roundIndex + 1} Complete!
+              </span>
+            </div>
+            <h1 className="font-display text-4xl text-chalk">{game.currentRound?.name}</h1>
           </div>
-          <Scoreboard scores={game.scores} highlightId={myId} />
-          <WaitingStrip>
-            {game.isLastRound ? 'Waiting for final results...' : 'Waiting for next round...'}
-          </WaitingStrip>
+
+          <Podium scores={game.scores} highlightId={myId} />
+
+          {myScore && (
+            <div className="card w-full text-center py-3">
+              <p className="font-display text-2xl text-ink tabular-nums">
+                You're #{myRank} · {myCurrentScore.toLocaleString()} pts
+              </p>
+            </div>
+          )}
+
+          <div className="w-full">
+            <WaitingStrip>
+              {game.isLastRound ? 'Waiting for final results...' : 'Waiting for next round...'}
+            </WaitingStrip>
+          </div>
         </div>
       </div>
     );

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import Timer from '../components/Timer';
 import Confetti from '../components/Confetti';
+import Podium from '../components/Podium';
 import type { PlayerScore } from '../types';
 
 const OPTION_STYLES = [
@@ -495,9 +496,6 @@ export default function HostGame() {
 
   // ── Round Summary ────────────────────────────────────────────────────────
   if (game.phase === 'round_summary') {
-    const top3 = game.scores.slice(0, 3);
-    const rest = game.scores.slice(3);
-
     return (
       <div className="min-h-screen bg-ink flex flex-col items-center
                       p-4 sm:p-8 gap-5 sm:gap-8">
@@ -513,54 +511,7 @@ export default function HostGame() {
           <h1 className="font-display text-4xl sm:text-6xl text-chalk">{game.currentRound?.name}</h1>
         </div>
 
-        {/* Podium — scaled for screen size */}
-        <div className="flex items-end gap-2 sm:gap-4 justify-center w-full max-w-3xl">
-          {top3[1] && (
-            <div className="flex flex-col items-center gap-1 sm:gap-3 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              <span className="text-3xl sm:text-4xl">{top3[1].avatar}</span>
-              <p className="text-chalk font-bold text-sm sm:text-lg text-center">{top3[1].playerName}</p>
-              <p className="text-soft font-display text-base sm:text-xl">{top3[1].score.toLocaleString()}</p>
-              <div className="w-24 sm:w-36 h-16 sm:h-24 bg-chalk-edge rounded-t-2xl flex items-center justify-center">
-                <span className="font-display text-4xl sm:text-5xl text-ink">2</span>
-              </div>
-            </div>
-          )}
-          {top3[0] && (
-            <div className="flex flex-col items-center gap-1 sm:gap-3 animate-bounce-in">
-              <span className="text-3xl sm:text-5xl">👑</span>
-              <span className="text-4xl sm:text-5xl">{top3[0].avatar}</span>
-              <p className="text-chalk font-bold text-base sm:text-xl text-center">{top3[0].playerName}</p>
-              <p className="text-sun font-display text-lg sm:text-2xl">{top3[0].score.toLocaleString()}</p>
-              <div className="w-28 sm:w-44 h-24 sm:h-36 bg-sun rounded-t-2xl flex items-center justify-center">
-                <span className="font-display text-5xl sm:text-6xl text-ink">1</span>
-              </div>
-            </div>
-          )}
-          {top3[2] && (
-            <div className="flex flex-col items-center gap-1 sm:gap-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              <span className="text-3xl sm:text-4xl">{top3[2].avatar}</span>
-              <p className="text-chalk font-bold text-sm sm:text-lg text-center">{top3[2].playerName}</p>
-              <p className="text-soft font-display text-base sm:text-xl">{top3[2].score.toLocaleString()}</p>
-              <div className="w-20 sm:w-32 h-12 sm:h-16 bg-sun-dark rounded-t-2xl flex items-center justify-center">
-                <span className="font-display text-3xl sm:text-4xl text-ink">3</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {rest.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-center max-w-2xl">
-            {rest.map((p) => (
-              <div key={p.playerId} className="flex items-center gap-2 bg-ink-2 border border-ink-4
-                                               rounded-xl px-3 py-2 text-sm">
-                <span className="text-soft font-bold">#{p.rank}</span>
-                <span className="text-lg">{p.avatar}</span>
-                <span className="text-chalk font-bold">{p.playerName}</span>
-                <span className="text-soft font-display">{p.score.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <Podium scores={game.scores} />
 
         {/* Bonus / penalty */}
         <div className="bg-ink-2 border border-ink-4 rounded-2xl p-4 w-full max-w-lg">
