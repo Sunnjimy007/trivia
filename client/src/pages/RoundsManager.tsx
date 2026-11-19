@@ -123,7 +123,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
                   transition-colors duration-200 focus:outline-none
-                  ${enabled ? 'bg-green-500' : 'bg-gray-600'}`}
+                  ${enabled ? 'bg-ans-d' : 'bg-ink-4'}`}
       title={enabled ? 'Click to disable this round' : 'Click to enable this round'}
     >
       <span
@@ -147,13 +147,13 @@ function QuestionForm({
   const set = (field: keyof QuestionDraft, value: string) => onChange({ ...q, [field]: value });
 
   return (
-    <div className="bg-gray-800/60 border border-gray-700 rounded-2xl p-4 flex flex-col gap-3">
+    <div className="bg-ink-3/60 border border-ink-4 rounded-2xl p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-purple-300 font-bold text-sm uppercase tracking-wide">
+        <span className="text-sun font-bold text-sm uppercase tracking-wide">
           Question {index + 1}
         </span>
         {canRemove && (
-          <button onClick={onRemove} className="text-red-400 hover:text-red-300 text-sm font-bold transition-colors">
+          <button onClick={onRemove} className="text-rose-300 hover:text-rose-200 text-sm font-bold transition-colors">
             ✕ Remove
           </button>
         )}
@@ -164,8 +164,8 @@ function QuestionForm({
         onChange={(e) => set('text', e.target.value)}
         placeholder="Type your question here..."
         rows={2}
-        className="w-full bg-gray-800 border border-gray-600 focus:border-purple-500 rounded-xl
-                   px-3 py-2.5 text-white text-base font-bold placeholder-gray-500
+        className="w-full bg-ink-3 border border-ink-4 focus:border-sun rounded-xl
+                   px-3 py-2.5 text-chalk text-base font-bold placeholder-soft/50
                    focus:outline-none transition-colors resize-none"
       />
 
@@ -181,8 +181,8 @@ function QuestionForm({
                 className={`flex-shrink-0 w-11 h-11 rounded-lg font-display text-lg font-bold
                             transition-all border-2
                             ${isCorrect
-                              ? 'bg-green-600 border-green-400 text-white'
-                              : 'bg-gray-700 border-gray-600 text-gray-400 hover:border-gray-400'}`}
+                              ? 'bg-ans-d border-ans-d-d text-ink'
+                              : 'bg-ink-4 border-ink-4 text-soft hover:border-soft'}`}
               >
                 {letter}
               </button>
@@ -191,15 +191,15 @@ function QuestionForm({
                 value={q[field] as string}
                 onChange={(e) => set(field, e.target.value)}
                 placeholder={`Option ${letter}`}
-                className={`flex-1 bg-gray-800 border rounded-xl px-3 py-2 text-white text-base
-                            font-bold placeholder-gray-500 focus:outline-none transition-colors
-                            ${isCorrect ? 'border-green-600 focus:border-green-400' : 'border-gray-600 focus:border-purple-500'}`}
+                className={`flex-1 bg-ink-3 border rounded-xl px-3 py-2 text-chalk text-base
+                            font-bold placeholder-soft/50 focus:outline-none transition-colors
+                            ${isCorrect ? 'border-green-600 focus:border-green-400' : 'border-ink-4 focus:border-sun'}`}
               />
             </div>
           );
         })}
       </div>
-      <p className="text-gray-500 text-xs">Tap a letter to mark it as the correct answer (turns green).</p>
+      <p className="text-soft/70 text-xs">Tap a letter to mark it as the correct answer (turns green).</p>
     </div>
   );
 }
@@ -392,8 +392,8 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   const isEditing = typeof formMode === 'object' && formMode.kind === 'edit';
   const formTitle = isEditing ? 'Edit Round' : 'Add New Round';
 
-  const inputCls = 'w-full bg-gray-800 border border-gray-600 focus:border-purple-500 rounded-xl ' +
-                   'px-3 py-3 text-white font-bold placeholder-gray-500 focus:outline-none transition-colors text-base';
+  const inputCls = 'w-full bg-ink-3 border border-ink-4 focus:border-sun rounded-xl ' +
+                   'px-3 py-3 text-chalk font-bold placeholder-soft/50 focus:outline-none transition-colors text-base';
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -403,35 +403,35 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
       aria-modal="true"
       aria-labelledby="rounds-title"
     >
-      <div className="bg-gray-900 border border-gray-700 rounded-3xl w-full max-w-2xl
+      <div className="bg-ink-2 border border-ink-4 rounded-3xl w-full max-w-2xl
                       max-h-[92vh] flex flex-col shadow-2xl">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-ink-4 flex-shrink-0">
           <div>
-            <h2 id="rounds-title" className="font-display text-2xl sm:text-3xl text-white">Manage Rounds</h2>
-            <p className="text-gray-400 text-xs mt-0.5">Toggle rounds on/off · Edit · Add new</p>
+            <h2 id="rounds-title" className="font-display text-2xl sm:text-3xl text-chalk">Manage Rounds</h2>
+            <p className="text-soft text-xs mt-0.5">Toggle rounds on/off · Edit · Add new</p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400
-                       hover:text-white font-bold text-lg flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-xl bg-ink-3 hover:bg-ink-4 text-soft
+                       hover:text-chalk font-bold text-lg flex items-center justify-center transition-colors"
           >✕</button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-700 flex-shrink-0">
+        <div className="flex border-b border-ink-4 flex-shrink-0">
           <button
             onClick={() => { setTab('list'); setMsg(null); }}
             className={`flex-1 py-3 font-bold text-sm transition-colors
-                        ${tab === 'list' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-500 hover:text-gray-300'}`}
+                        ${tab === 'list' ? 'text-sun border-b-2 border-sun' : 'text-soft/70 hover:text-soft'}`}
           >
             📋 All Rounds
           </button>
           <button
             onClick={openAdd}
             className={`flex-1 py-3 font-bold text-sm transition-colors
-                        ${tab === 'form' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-500 hover:text-gray-300'}`}
+                        ${tab === 'form' ? 'text-sun border-b-2 border-sun' : 'text-soft/70 hover:text-soft'}`}
           >
             {isEditing ? '✏️ Editing' : '➕ Add New'}
           </button>
@@ -444,13 +444,13 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
           {tab === 'list' && (
             <div className="p-4 sm:p-5 flex flex-col gap-3">
               {msg && !msg.ok && (
-                <div className="rounded-2xl px-4 py-3 font-bold text-sm bg-red-500/20 border border-red-500/40 text-red-400">
+                <div className="rounded-2xl px-4 py-3 font-bold text-sm bg-ans-a/20 border border-ans-a/50 text-rose-300">
                   {msg.text}
                 </div>
               )}
               {loading ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-400 font-bold animate-pulse">Loading rounds...</p>
+                  <p className="text-soft font-bold animate-pulse">Loading rounds...</p>
                 </div>
               ) : (
                 rounds.map((r) => (
@@ -458,8 +458,8 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                     key={r.id}
                     className={`rounded-2xl border transition-all
                                 ${r.enabled
-                                  ? r.isCustom ? 'bg-purple-500/10 border-purple-500/30' : 'bg-gray-800/60 border-gray-700'
-                                  : 'bg-gray-900 border-gray-800 opacity-50'}`}
+                                  ? r.isCustom ? 'bg-sun/10 border-sun/40' : 'bg-ink-3/60 border-ink-4'
+                                  : 'bg-ink-2 border-ink-4 opacity-50'}`}
                   >
                     {/* Main row */}
                     <div className="flex items-center gap-3 p-3 sm:p-4">
@@ -467,24 +467,24 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-white font-bold text-sm sm:text-base">{r.name}</p>
+                          <p className="text-chalk font-bold text-sm sm:text-base">{r.name}</p>
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full
-                                           ${r.isCustom ? 'text-purple-300 bg-purple-500/20' : 'text-gray-400 bg-gray-700'}`}>
+                                           ${r.isCustom ? 'text-sun bg-sun/20' : 'text-soft bg-ink-4'}`}>
                             {r.isCustom ? 'Custom' : 'Built-in'}
                           </span>
                           {!r.enabled && (
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-red-400 bg-red-500/20">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-rose-300 bg-ans-a/20">
                               Disabled
                             </span>
                           )}
                         </div>
-                        <p className="text-gray-400 text-xs mt-0.5">{r.questionCount} questions</p>
+                        <p className="text-soft text-xs mt-0.5">{r.questionCount} questions</p>
                       </div>
 
                       {/* Toggle */}
                       <div className="flex-shrink-0" title={r.enabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}>
                         {toggling === r.id
-                          ? <div className="w-11 h-6 rounded-full bg-gray-600 animate-pulse" />
+                          ? <div className="w-11 h-6 rounded-full bg-ink-4 animate-pulse" />
                           : <Toggle enabled={r.enabled} onChange={() => handleToggle(r.id)} />}
                       </div>
                     </div>
@@ -495,16 +495,16 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                         <>
                           <button
                             onClick={() => openEdit(r.id)}
-                            className="flex-1 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40
-                                       text-indigo-300 font-bold text-xs py-2 rounded-xl transition-colors"
+                            className="flex-1 bg-white/10 hover:bg-white/20 border border-ink-4
+                                       text-chalk font-extrabold text-xs py-2 rounded-xl transition-colors"
                           >
                             ✏️ Edit
                           </button>
                           <button
                             onClick={() => handleDelete(r.id)}
                             disabled={deleting === r.id}
-                            className="flex-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/40
-                                       text-red-400 font-bold text-xs py-2 rounded-xl transition-colors
+                            className="flex-1 bg-ans-a/15 hover:bg-ans-a/35 border border-ans-a/50
+                                       text-rose-300 font-bold text-xs py-2 rounded-xl transition-colors
                                        disabled:opacity-40"
                           >
                             {deleting === r.id ? '...' : '🗑 Delete'}
@@ -513,8 +513,8 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                       ) : (
                         <button
                           onClick={() => openDuplicate(r.id)}
-                          className="flex-1 bg-gray-700/60 hover:bg-gray-700 border border-gray-600
-                                     text-gray-300 font-bold text-xs py-2 rounded-xl transition-colors"
+                          className="flex-1 bg-ink-4/60 hover:bg-ink-4 border border-ink-4
+                                     text-soft font-bold text-xs py-2 rounded-xl transition-colors"
                         >
                           📋 Duplicate &amp; Edit
                         </button>
@@ -526,8 +526,7 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
 
               <button
                 onClick={openAdd}
-                className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-2xl
-                           text-sm border-b-2 border-purple-800 active:scale-95 transition-all mt-1"
+                className="bg-sun hover:bg-sun-soft text-ink font-extrabold rounded-full border-[3px] border-sun border-b-[6px] border-b-sun-dark active:translate-y-0.5 transition-all py-3 text-sm mt-1"
               >
                 ➕ Add New Round
               </button>
@@ -537,24 +536,24 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
           {/* ── Form ── */}
           {tab === 'form' && (
             <div className="p-4 sm:p-5 flex flex-col gap-5">
-              <h3 className="text-white font-bold text-base">{formTitle}</h3>
+              <h3 className="text-chalk font-bold text-base">{formTitle}</h3>
 
               {/* Round details */}
               <div className="flex flex-col gap-3">
                 <div className="flex gap-3">
                   <div className="w-20 flex-shrink-0">
-                    <label className="text-gray-400 text-xs font-bold block mb-1">Emoji</label>
+                    <label className="text-soft text-xs font-bold block mb-1">Emoji</label>
                     <input
                       type="text"
                       value={draft.emoji}
                       onChange={(e) => setDraft((d) => ({ ...d, emoji: e.target.value }))}
                       maxLength={2}
-                      className="w-full bg-gray-800 border border-gray-600 focus:border-purple-500
-                                 rounded-xl px-3 py-3 text-white text-2xl text-center focus:outline-none"
+                      className="w-full bg-ink-3 border border-ink-4 focus:border-sun
+                                 rounded-xl px-3 py-3 text-chalk text-2xl text-center focus:outline-none"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-gray-400 text-xs font-bold block mb-1">Round Name *</label>
+                    <label className="text-soft text-xs font-bold block mb-1">Round Name *</label>
                     <input
                       type="text"
                       value={draft.name}
@@ -565,7 +564,7 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                   </div>
                 </div>
                 <div>
-                  <label className="text-gray-400 text-xs font-bold block mb-1">Description</label>
+                  <label className="text-soft text-xs font-bold block mb-1">Description</label>
                   <input
                     type="text"
                     value={draft.description}
@@ -579,7 +578,7 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
               {/* Questions */}
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-white font-bold text-sm uppercase tracking-wide">
+                  <h4 className="text-chalk font-bold text-sm uppercase tracking-wide">
                     Questions ({draft.questions.length})
                   </h4>
                 </div>
@@ -597,8 +596,8 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
 
                 <button
                   onClick={addQ}
-                  className="border-2 border-dashed border-gray-600 hover:border-purple-500
-                             text-gray-400 hover:text-purple-400 font-bold py-3 rounded-2xl
+                  className="border-2 border-dashed border-ink-4 hover:border-sun
+                             text-soft hover:text-sun font-bold py-3 rounded-2xl
                              text-sm transition-colors"
                 >
                   + Add Another Question
@@ -608,7 +607,7 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
               {msg && (
                 <div className={`rounded-2xl px-4 py-3 font-bold text-sm
                                  ${msg.ok ? 'bg-green-500/20 border border-green-500/40 text-green-300'
-                                          : 'bg-red-500/20 border border-red-500/40 text-red-400'}`}>
+                                          : 'bg-ans-a/20 border border-ans-a/50 text-rose-300'}`}>
                   {msg.text}
                 </div>
               )}
@@ -616,9 +615,7 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white
-                           font-bold text-base py-4 rounded-2xl border-b-4 border-emerald-800
-                           active:border-b-0 active:scale-95 transition-all disabled:opacity-50"
+                className="bg-sun hover:bg-sun-soft text-ink font-extrabold rounded-full border-[3px] border-sun border-b-[6px] border-b-sun-dark active:translate-y-0.5 transition-all text-base py-4 disabled:opacity-50"
               >
                 {saving ? 'Saving...' : isEditing ? '💾 Update Round' : '💾 Save Round'}
               </button>
@@ -632,10 +629,10 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
           <form
             onSubmit={(e) => { e.preventDefault(); answerPassword(pwInput); }}
-            className="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4"
+            className="bg-ink-2 border border-ink-4 rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4"
           >
-            <h3 className="font-display text-2xl text-white">Admin password</h3>
-            <p className="text-gray-400 text-sm">Enter the admin password to manage rounds.</p>
+            <h3 className="font-display text-2xl text-chalk">Admin password</h3>
+            <p className="text-soft text-sm">Enter the admin password to manage rounds.</p>
             <input
               type="password"
               value={pwInput}
@@ -646,19 +643,19 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
               placeholder="Password"
             />
             {pwPrompt.wrong && (
-              <p className="text-red-400 font-bold text-sm">That password didn't work. Try again.</p>
+              <p className="text-rose-300 font-bold text-sm">That password didn't work. Try again.</p>
             )}
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => answerPassword(null)}
-                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl"
+                className="flex-1 bg-ink-3 hover:bg-ink-4 text-soft font-bold py-3 rounded-xl"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl"
+                className="flex-1 bg-sun hover:bg-sun-soft text-ink font-extrabold rounded-full border-[3px] border-sun border-b-[6px] border-b-sun-dark active:translate-y-0.5 transition-all py-3"
               >
                 Unlock
               </button>

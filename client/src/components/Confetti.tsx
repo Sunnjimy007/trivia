@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
-const COLORS = ['#f43f5e', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
+// The landing page's confetti colours: the four answer colours, sun yellow and chalk.
+const COLORS = ['#E11D48', '#2563EB', '#10B981', '#F59E0B', '#FFC531', '#F8F4FF'];
 
 interface Piece {
   id: number;

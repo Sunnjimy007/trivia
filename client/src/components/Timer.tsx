@@ -27,7 +27,8 @@ export default function Timer({ startTime, timeLimit, size = 'md', onExpire }: T
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
-  const color = progress > 0.5 ? '#22c55e' : progress > 0.25 ? '#f59e0b' : '#ef4444';
+  // Sun yellow while there is time, rose when it is nearly up.
+  const color = progress > 0.25 ? '#FFC531' : '#E11D48';
 
   const dim = size === 'sm' ? 'w-14 h-14' : size === 'lg' ? 'w-32 h-32' : 'w-20 h-20 sm:w-28 sm:h-28';
   const textSize = size === 'sm' ? 'text-xl' : size === 'lg' ? 'text-4xl' : 'text-2xl sm:text-4xl';

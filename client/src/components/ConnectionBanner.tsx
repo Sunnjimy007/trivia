@@ -27,8 +27,8 @@ export default function ConnectionBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 inset-x-0 z-[100] bg-amber-500 text-gray-900 text-center
-                 font-bold text-sm py-2 px-4 shadow-lg"
+      className="fixed top-0 inset-x-0 z-[100] bg-sun text-ink text-center border-b-4 border-sun-dark
+                 font-extrabold text-sm py-2 px-4"
     >
       {text}
     </div>

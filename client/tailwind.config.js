@@ -3,6 +3,20 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      // The game's look, shared with the landing page (public/welcome/landing.css):
+      // flat grounds (ink, sun, chalk), one accent (sun), and the four answer colours.
+      colors: {
+        ink: { DEFAULT: '#150A33', 2: '#24135C', 3: '#2F1A75', 4: '#432A95' },
+        chalk: { DEFAULT: '#F6F2FF', 2: '#EAE3FA', edge: '#B9ACE0' },
+        sun: { DEFAULT: '#FFC531', dark: '#C48A00', soft: '#FFE08A' },
+        soft: '#CFC3EE', // secondary text on ink, tinted rather than flat grey
+        ans: {
+          a: '#E11D48', 'a-d': '#9F1239',
+          b: '#2563EB', 'b-d': '#1E3A8A',
+          c: '#F59E0B', 'c-d': '#B45309',
+          d: '#10B981', 'd-d': '#047857',
+        },
+      },
       fontFamily: {
         display: ['Fredoka One', 'cursive'],
         body: ['Nunito', 'sans-serif'],

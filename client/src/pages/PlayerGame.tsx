@@ -23,12 +23,13 @@ function AdjustmentToast({
   const isBonus = adjustment.amount > 0;
   return (
     <div
+      role="status"
       className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3
-                  px-5 py-3 rounded-2xl shadow-2xl border-2 animate-bounce-in
-                  ${isBonus ? 'bg-green-900 border-green-500' : 'bg-red-900 border-red-500'}`}
+                  px-5 py-3 rounded-2xl border-b-4 animate-bounce-in max-w-[92vw]
+                  ${isBonus ? 'bg-ans-d text-ink border-ans-d-d' : 'bg-ans-a text-white border-ans-a-d'}`}
     >
-      <span className="text-2xl sm:text-3xl">{adjustment.avatar}</span>
-      <p className={`font-bold text-base ${isBonus ? 'text-green-200' : 'text-red-200'}`}>
+      <span className="text-2xl sm:text-3xl" aria-hidden="true">{adjustment.avatar}</span>
+      <p className="font-extrabold text-base">
         {isBonus
           ? `${adjustment.playerName} just received 100 bonus points! 🎉`
           : `${adjustment.playerName} just lost 100 pts 😬`}
@@ -37,12 +38,8 @@ function AdjustmentToast({
   );
 }
 
-const OPTION_COLORS = [
-  { base: 'bg-rose-500 border-rose-700' },
-  { base: 'bg-blue-500 border-blue-700' },
-  { base: 'bg-amber-500 border-amber-700' },
-  { base: 'bg-emerald-500 border-emerald-700' },
-];
+// The four answer colours (see index.css), in answer order.
+const OPTION_CLASSES = ['ans-a', 'ans-b', 'ans-c', 'ans-d'];
 
 export default function PlayerGame() {
   const { state, submitAnswer, leaveGame } = useGame();
@@ -54,8 +51,18 @@ export default function PlayerGame() {
   const myCurrentScore = myScore?.score ?? 0;
 
   const ScorePill = () => (
-    <div className="bg-white/15 rounded-xl px-3 py-1.5 text-white font-bold text-sm flex-shrink-0">
+    <div className="bg-sun text-ink rounded-full px-3 py-1.5 font-extrabold text-sm flex-shrink-0 tabular-nums">
       {myCurrentScore.toLocaleString()} pts
+    </div>
+  );
+
+  // "Waiting for the host" strip, ink on any ground.
+  const WaitingStrip = ({ children }: { children: React.ReactNode }) => (
+    <div className="bg-ink text-chalk rounded-3xl text-center py-3 px-4 flex-shrink-0">
+      <div className="flex items-center justify-center gap-2.5">
+        <div className="w-2.5 h-2.5 rounded-full bg-sun animate-pulse" />
+        <p className="font-extrabold text-sm">{children}</p>
+      </div>
     </div>
   );
 
@@ -68,23 +75,22 @@ export default function PlayerGame() {
           <div className="w-full flex justify-end">
             <ScorePill />
           </div>
-          <div className="text-7xl sm:text-8xl">{game.currentRound?.emoji}</div>
+          <div className="text-7xl sm:text-8xl" aria-hidden="true">{game.currentRound?.emoji}</div>
           <div className="text-center">
-            <div className="bg-white/20 text-white text-xs font-bold uppercase tracking-widest
-                            px-4 py-1.5 rounded-full mb-3 inline-block">
+            <span className="chip mb-3 uppercase tracking-widest text-xs">
               Round {game.roundIndex + 1} of {game.totalRounds}
-            </div>
-            <h1 className="font-display text-4xl sm:text-5xl text-white">
+            </span>
+            <h1 className="font-display text-4xl sm:text-5xl text-chalk">
               {game.currentRound?.name}
             </h1>
-            <p className="text-white/80 text-base sm:text-xl mt-2 px-4">
+            <p className="text-soft text-base sm:text-xl font-bold mt-2 px-4">
               {game.currentRound?.description}
             </p>
           </div>
           <div className="card w-full text-center py-4">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-              <p className="font-bold text-gray-700 text-base">Waiting for host to start...</p>
+              <div className="w-3 h-3 rounded-full bg-ans-d animate-pulse flex-shrink-0" />
+              <p className="font-extrabold text-ink text-base">Waiting for host to start...</p>
             </div>
           </div>
         </div>
@@ -101,8 +107,8 @@ export default function PlayerGame() {
         <AdjustmentToast adjustment={lastAdjustment} />
         {/* Top bar */}
         <div className="flex items-center justify-between gap-2 flex-shrink-0">
-          <div className="bg-white/15 rounded-xl px-3 py-2 text-white font-bold text-sm sm:text-base flex-1 min-w-0 truncate">
-            {game.currentRound?.emoji} Q{game.questionIndex + 1}/{game.totalQuestions}
+          <div className="chip flex-1 min-w-0 truncate text-sm sm:text-base">
+            <span aria-hidden="true">{game.currentRound?.emoji}</span> Q{game.questionIndex + 1}/{game.totalQuestions}
           </div>
           <ScorePill />
           <Timer startTime={game.questionStartTime} timeLimit={game.timeLimit} />
@@ -110,7 +116,7 @@ export default function PlayerGame() {
 
         {/* Question card */}
         <div className="card flex-shrink-0">
-          <h1 className="font-display text-xl sm:text-2xl text-gray-800 text-center leading-snug">
+          <h1 className="font-display text-xl sm:text-2xl text-ink text-center leading-snug">
             {game.currentQuestion?.text}
           </h1>
         </div>
@@ -118,13 +124,13 @@ export default function PlayerGame() {
         {/* Answered state */}
         {hasAnswered ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 animate-bounce-in px-2">
-            <div className="text-5xl">⏳</div>
+            <div className="text-5xl" aria-hidden="true">⏳</div>
             <div className="card w-full text-center">
-              <p className="font-display text-2xl sm:text-3xl text-purple-600 mb-1">Locked in!</p>
-              <p className="text-gray-500 font-bold text-base">Waiting for others...</p>
-              <div className="mt-3 bg-purple-50 rounded-xl p-3 border border-purple-100">
-                <p className="text-purple-500 font-bold text-xs uppercase tracking-wide mb-1">Your answer</p>
-                <p className="text-purple-800 font-bold text-base leading-snug">
+              <p className="font-display text-2xl sm:text-3xl text-ink mb-1">Locked in!</p>
+              <p className="text-[#4B3A7C] font-extrabold text-base">Waiting for others...</p>
+              <div className="mt-3 bg-white rounded-2xl p-3 border-2 border-chalk-edge">
+                <p className="text-[#4B3A7C] font-extrabold text-xs uppercase tracking-wide mb-1">Your answer</p>
+                <p className="text-ink font-extrabold text-base leading-snug">
                   {game.currentQuestion?.options.find((o) => o.id === myAnswer)?.text}
                 </p>
               </div>
@@ -137,7 +143,7 @@ export default function PlayerGame() {
               <button
                 key={opt.id}
                 onClick={() => submitAnswer(opt.id)}
-                className={`btn-answer ${OPTION_COLORS[i].base} flex-1 animate-slide-up`}
+                className={`btn-answer ${OPTION_CLASSES[i]} flex-1 animate-slide-up`}
                 style={{ animationDelay: `${i * 0.07}s` }}
               >
                 <div className="answer-label font-display text-2xl sm:text-3xl flex-shrink-0">
@@ -150,8 +156,8 @@ export default function PlayerGame() {
         )}
 
         {!hasAnswered && (
-          <p className="text-white/50 text-center text-xs font-bold flex-shrink-0 pb-1">
-            Tap fast — first correct answer wins the most points! ⚡
+          <p className="text-soft text-center text-xs font-bold flex-shrink-0 pb-1">
+            Tap fast: the first correct answer wins the most points! ⚡
           </p>
         )}
       </div>
@@ -159,51 +165,46 @@ export default function PlayerGame() {
   }
 
   // ── Question results ─────────────────────────────────────────────────────
+  // The whole screen takes the colour of the outcome: green, rose, or yellow for "no answer".
   if (game.phase === 'question_results') {
     const iGotIt = !!myAnswerResult && myAnswerResult.isCorrect;
     const iWasWrong = !!myAnswerResult && !myAnswerResult.isCorrect;
+    const ground = iGotIt ? '!bg-ans-d !text-ink' : iWasWrong ? '!bg-ans-a !text-white' : '!bg-sun !text-ink';
 
     return (
-      <div className="game-screen overflow-y-auto">
+      <div className={`game-screen overflow-y-auto ${ground}`}>
         <AdjustmentToast adjustment={lastAdjustment} />
         {/* Result banner */}
-        <div
-          className={`card flex-shrink-0 text-center py-5 animate-bounce-in
-            ${iGotIt
-              ? 'bg-green-50 border-2 border-green-300'
-              : iWasWrong
-              ? 'bg-red-50 border-2 border-red-300'
-              : 'bg-gray-50'}`}
-        >
+        <div className="card flex-shrink-0 text-center py-5 animate-bounce-in">
           {iGotIt ? (
             <>
-              <div className="text-4xl mb-1">🎉</div>
-              <h1 className="font-display text-3xl text-green-700">Correct!</h1>
-              <p className="text-green-600 font-bold text-xl mt-1">+{myPoints.toLocaleString()} pts</p>
+              <div className="text-4xl mb-1" aria-hidden="true">🎉</div>
+              <h1 className="font-display text-3xl text-[#047857]">Correct!</h1>
+              <p className="text-ink font-extrabold text-xl mt-1 tabular-nums">+{myPoints.toLocaleString()} pts</p>
               {myAnswerResult.answerOrder === 1 && (
-                <p className="text-amber-500 font-bold text-sm mt-1">⚡ First to answer!</p>
+                <p className="text-[#7A4D00] font-extrabold text-sm mt-1">⚡ First to answer!</p>
               )}
             </>
           ) : iWasWrong ? (
             <>
-              <div className="text-4xl mb-1">😬</div>
-              <h1 className="font-display text-3xl text-red-700">Oops!</h1>
-              <p className="text-red-500 font-bold text-base mt-1">Better luck next time!</p>
+              <div className="text-4xl mb-1" aria-hidden="true">😬</div>
+              <h1 className="font-display text-3xl text-ans-a-d">Oops!</h1>
+              <p className="text-[#4B3A7C] font-extrabold text-base mt-1">Better luck next time!</p>
             </>
           ) : (
             <>
-              <div className="text-4xl mb-1">⏰</div>
-              <h1 className="font-display text-3xl text-gray-600">Time's up!</h1>
-              <p className="text-gray-500 font-bold text-base mt-1">Didn't answer in time</p>
+              <div className="text-4xl mb-1" aria-hidden="true">⏰</div>
+              <h1 className="font-display text-3xl text-ink">Time's up!</h1>
+              <p className="text-[#4B3A7C] font-extrabold text-base mt-1">Didn't answer in time</p>
             </>
           )}
         </div>
 
         {/* Correct answer */}
         <div className="card flex-shrink-0">
-          <p className="text-gray-400 font-bold text-xs uppercase tracking-wide mb-2">Correct Answer</p>
-          <div className="bg-green-50 rounded-xl p-3 border-2 border-green-200">
-            <p className="font-bold text-green-800 text-base leading-snug">
+          <p className="text-[#4B3A7C] font-extrabold text-xs uppercase tracking-wide mb-2">Correct answer</p>
+          <div className="bg-[#CFF5E4] rounded-2xl p-3 border-2 border-ans-d-d">
+            <p className="font-extrabold text-ink text-base leading-snug">
               ✓ {game.currentQuestion?.options.find((o) => o.id === game.correctOptionId)?.text}
             </p>
           </div>
@@ -211,16 +212,11 @@ export default function PlayerGame() {
 
         {/* Leaderboard */}
         <div className="flex-1 min-h-0">
-          <p className="text-white/60 font-bold text-xs uppercase tracking-wide mb-2">Leaderboard</p>
+          <h2 className="font-extrabold text-xs uppercase tracking-wide mb-2">Leaderboard</h2>
           <Scoreboard scores={game.scores} highlightId={myId} compact />
         </div>
 
-        <div className="card flex-shrink-0 text-center py-3">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
-            <p className="font-bold text-gray-600 text-sm">Waiting for host...</p>
-          </div>
-        </div>
+        <WaitingStrip>Waiting for host...</WaitingStrip>
       </div>
     );
   }
@@ -229,26 +225,19 @@ export default function PlayerGame() {
   if (game.phase === 'round_summary') {
     const myRank = game.scores.find((s) => s.playerId === myId)?.rank ?? 0;
     return (
-      <div className="screen overflow-y-auto">
+      <div className="screen ground-sun overflow-y-auto">
         <AdjustmentToast adjustment={lastAdjustment} />
         <div className="w-full max-w-sm flex flex-col gap-4 animate-slide-up py-4">
           <div className="text-center">
-            <div className="text-5xl mb-2">{game.currentRound?.emoji}</div>
-            <h1 className="font-display text-4xl text-white">Round Complete!</h1>
-            <p className="text-white/70 text-lg mt-1">You're #{myRank} 🏆</p>
-            <p className="text-amber-300 font-display text-2xl mt-1">{myCurrentScore.toLocaleString()} pts</p>
+            <div className="text-5xl mb-2" aria-hidden="true">{game.currentRound?.emoji}</div>
+            <h1 className="font-display text-4xl sm:text-5xl text-ink">Round complete!</h1>
+            <p className="text-[#34206A] text-lg font-extrabold mt-1">You're #{myRank} 🏆</p>
+            <p className="text-ink font-display text-3xl mt-1 tabular-nums">{myCurrentScore.toLocaleString()} pts</p>
           </div>
-          <div className="bg-white/10 rounded-3xl p-6">
-            <Scoreboard scores={game.scores} highlightId={myId} />
-          </div>
-          <div className="card text-center py-3">
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
-              <p className="font-bold text-gray-600 text-sm">
-                {game.isLastRound ? 'Waiting for final results...' : 'Waiting for next round...'}
-              </p>
-            </div>
-          </div>
+          <Scoreboard scores={game.scores} highlightId={myId} />
+          <WaitingStrip>
+            {game.isLastRound ? 'Waiting for final results...' : 'Waiting for next round...'}
+          </WaitingStrip>
         </div>
       </div>
     );
@@ -259,27 +248,25 @@ export default function PlayerGame() {
     const isWinner = myScore?.rank === 1;
 
     return (
-      <div className="screen overflow-y-auto">
+      <div className="screen ground-sun overflow-y-auto">
         <AdjustmentToast adjustment={lastAdjustment} />
         {isWinner && <Confetti />}
         <div className="w-full max-w-sm flex flex-col gap-4 animate-bounce-in relative z-10 py-4">
           <div className="text-center">
-            <div className="text-6xl mb-2">{isWinner ? '🏆' : '🎉'}</div>
-            <h1 className="font-display text-5xl text-white">Game Over!</h1>
+            <div className="text-6xl mb-2" aria-hidden="true">{isWinner ? '🏆' : '🎉'}</div>
+            <h1 className="font-display text-5xl sm:text-6xl text-ink">Game over!</h1>
             {myScore && (
               <div className="mt-3">
-                <p className="text-white/70 text-base">Your final rank</p>
-                <p className="font-display text-5xl text-yellow-300">#{myScore.rank}</p>
-                <p className="text-white/80 text-xl font-bold">{myScore.score.toLocaleString()} pts</p>
+                <p className="text-[#34206A] text-base font-extrabold">Your final rank</p>
+                <p className="font-display text-6xl text-ink">#{myScore.rank}</p>
+                <p className="text-[#34206A] text-xl font-extrabold tabular-nums">{myScore.score.toLocaleString()} pts</p>
               </div>
             )}
           </div>
-          <div className="bg-white/10 rounded-3xl p-6">
-            <h2 className="font-bold text-white text-base mb-3 text-center">Final Scores</h2>
-            <Scoreboard scores={game.scores} highlightId={myId} />
-          </div>
-          <button onClick={leaveGame} className="btn-secondary text-xl py-5">
-            🔄 Play Again
+          <h2 className="font-extrabold text-ink text-base text-center">Final scores</h2>
+          <Scoreboard scores={game.scores} highlightId={myId} />
+          <button onClick={leaveGame} className="btn-ink">
+            🔄 Play again
           </button>
         </div>
       </div>
@@ -289,8 +276,8 @@ export default function PlayerGame() {
   return (
     <div className="screen">
       <div className="text-center">
-        <div className="text-5xl mb-3 animate-pulse-slow">🎮</div>
-        <h1 className="font-bold text-white text-xl">Waiting for the game to start...</h1>
+        <div className="text-5xl mb-3 animate-pulse-slow" aria-hidden="true">🎮</div>
+        <h1 className="font-display text-3xl text-chalk">Waiting for the game to start...</h1>
       </div>
     </div>
   );
