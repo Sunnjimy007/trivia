@@ -9,6 +9,29 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<!-- PWA: same install tags as the game (index.html), because first-time visitors land here first -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Amali's Trivia">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<script>
+  // The installed app should open the game, not this page. (index.html does the reverse for
+  // browser tabs: it sends first-time visitors here but skips the installed app.)
+  (function () {
+    try {
+      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        location.replace('/');
+      }
+    } catch (e) { /* storage or media queries blocked: just show the page */ }
+  })();
+  // Register the service worker here too. Visitors arrive on this page first, so without this the
+  // app shell is not cached and the install prompt is not offered until they have opened the game.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () { /* not fatal */ });
+    });
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
