@@ -25,6 +25,28 @@ interface RoundSummary {
   questionCount: number;
   isCustom: boolean;
   enabled: boolean;
+  // Where the round lives: the code, this editor, or Notion (then edited and switched on/off there).
+  source?: 'builtin' | 'custom' | 'notion';
+  notionUrl?: string;
+}
+
+interface NotionStatus {
+  configured: boolean;
+  syncedAt: number | null;
+  rounds: number;
+  questions: number;
+  warningCount: number;
+  error: string | null;
+  seed: { running: boolean; done: number; total: number; error: string | null; finishedAt: number | null };
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+function timeAgo(ms: number): string {
+  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  return `${Math.round(s / 3600)} h ago`;
 }
 
 interface StoredQuestion {
@@ -235,6 +257,10 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
   // Scoring: do faster right answers earn more? null until the server has told us.
   const [speedScoring, setSpeedScoring] = useState<boolean | null>(null);
   const [savingSpeed, setSavingSpeed] = useState(false);
+  // Notion: where rounds and questions can be typed instead. null until the server has told us.
+  const [notion, setNotion] = useState<NotionStatus | null>(null);
+  const [notionBusy, setNotionBusy] = useState(false);
+  const [notionNote, setNotionNote] = useState<{ ok: boolean; text: string; warnings: string[] } | null>(null);
 
   // Shows the password box (a real password field, since the host screen may be on a TV).
   const askPassword = useCallback((wrong: boolean) => new Promise<string | null>((resolve) => {
@@ -282,6 +308,66 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
       .then((s: { speedScoring?: boolean }) => setSpeedScoring(s.speedScoring !== false))
       .catch(() => setSpeedScoring(null));
   }, []);
+
+  // ── Notion ──
+  const fetchNotion = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/notion`);
+      if (res.ok) setNotion(await res.json());
+    } catch { /* keep what we had */ }
+  }, []);
+
+  useEffect(() => { fetchNotion(); }, [fetchNotion]);
+
+  // While the built-in rounds are being copied into Notion, keep the progress fresh.
+  const copying = notion?.seed.running ?? false;
+  useEffect(() => {
+    if (!copying) return;
+    const timer = setInterval(() => { fetchNotion(); fetchRounds(); }, 2000);
+    return () => clearInterval(timer);
+  }, [copying, fetchNotion, fetchRounds]);
+
+  async function handleNotionSync() {
+    setNotionBusy(true);
+    setNotionNote(null);
+    try {
+      const res = await adminFetch(`${API}/api/notion/sync`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        setNotionNote({ ok: false, text: 'Wrong password.', warnings: [] });
+      } else if (!res.ok) {
+        setNotionNote({ ok: false, text: `${data.error ?? 'Could not read Notion.'} The saved copy is still being used.`, warnings: [] });
+      } else {
+        setNotionNote({
+          ok: true,
+          text: `Read ${plural(data.rounds, 'round')} and ${plural(data.questions, 'question')} from Notion.`,
+          warnings: Array.isArray(data.warnings) ? data.warnings : [],
+        });
+      }
+      fetchRounds();
+      fetchNotion();
+    } catch {
+      setNotionNote({ ok: false, text: 'Could not reach server.', warnings: [] });
+    } finally {
+      setNotionBusy(false);
+    }
+  }
+
+  async function handleNotionCopy() {
+    if (!confirm('Copy the built-in rounds into Notion? Rounds that are already in Notion are left alone. It takes a few minutes.')) return;
+    setNotionBusy(true);
+    setNotionNote(null);
+    try {
+      const res = await adminFetch(`${API}/api/notion/seed`, { method: 'POST' });
+      if (res.status === 202) fetchNotion();
+      else if (res.status === 409) setNotionNote({ ok: false, text: 'Already copying.', warnings: [] });
+      else setNotionNote({ ok: false, text: 'Could not start the copy (wrong password?).', warnings: [] });
+    } catch {
+      setNotionNote({ ok: false, text: 'Could not reach server.', warnings: [] });
+    } finally {
+      setNotionBusy(false);
+    }
+  }
 
   // ── "Turn off the speed factor" ──
   async function handleSpeedToggle() {
@@ -522,6 +608,81 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                 </button>
               )}
 
+              {/* Notion: type rounds and questions there instead. */}
+              {notion && (
+                <div className="rounded-2xl border border-ink-4 bg-ink-3/60 p-3 sm:p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl sm:text-3xl flex-shrink-0" aria-hidden="true">🗒️</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-chalk font-bold text-sm sm:text-base">
+                        {notion.configured ? 'Notion is connected' : 'Notion is not connected'}
+                      </p>
+                      <p className="text-soft text-xs mt-0.5">
+                        {notion.configured
+                          ? notion.syncedAt
+                            ? `${plural(notion.rounds, 'round')}, ${plural(notion.questions, 'question')}, read ${timeAgo(notion.syncedAt)}. Rounds from Notion are edited and switched on or off there.`
+                            : 'Reading Notion for the first time…'
+                          : 'Type your rounds and questions in Notion instead. See NOTION.md in the project for the three-step setup.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {notion.configured && notion.error && (
+                    <p className="text-rose-300 text-xs font-bold">
+                      Last read failed: {notion.error} The saved copy is still being used.
+                    </p>
+                  )}
+
+                  {notion.configured && (
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={handleNotionSync}
+                        disabled={notionBusy || notion.seed.running}
+                        className="flex-1 min-h-[44px] bg-white/10 hover:bg-white/20 border border-ink-4 text-chalk
+                                   font-extrabold text-xs rounded-xl px-3 transition-colors disabled:opacity-40"
+                      >
+                        {notionBusy ? 'Working…' : '🔄 Read Notion now'}
+                      </button>
+                      <button
+                        onClick={handleNotionCopy}
+                        disabled={notionBusy || notion.seed.running}
+                        className="flex-1 min-h-[44px] bg-white/10 hover:bg-white/20 border border-ink-4 text-chalk
+                                   font-extrabold text-xs rounded-xl px-3 transition-colors disabled:opacity-40"
+                      >
+                        📤 Copy built-in rounds to Notion
+                      </button>
+                    </div>
+                  )}
+
+                  {notion.seed.running && (
+                    <p role="status" className="text-sun text-xs font-bold">
+                      Copying to Notion… {notion.seed.done} of {notion.seed.total} rows
+                    </p>
+                  )}
+                  {!notion.seed.running && notion.seed.error && (
+                    <p className="text-rose-300 text-xs font-bold">Copy stopped: {notion.seed.error} Run it again to finish.</p>
+                  )}
+                  {!notion.seed.running && !notion.seed.error && notion.seed.finishedAt && (
+                    <p className="text-ans-d text-xs font-bold">Copied. The built-in rounds are now in Notion.</p>
+                  )}
+
+                  {notionNote && (
+                    <div role="status" className={`text-xs font-bold ${notionNote.ok ? 'text-ans-d' : 'text-rose-300'}`}>
+                      <p>{notionNote.text}</p>
+                      {notionNote.warnings.length > 0 && (
+                        <>
+                          <p className="text-soft mt-1">Fix these in Notion:</p>
+                          <ul className="list-disc pl-5 text-soft font-semibold">
+                            {notionNote.warnings.slice(0, 8).map((w, i) => <li key={i}>{w}</li>)}
+                            {notionNote.warnings.length > 8 && <li>…and {notionNote.warnings.length - 8} more.</li>}
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {loading ? (
                 <div className="text-center py-12">
                   <p className="text-soft font-bold animate-pulse">Loading rounds...</p>
@@ -543,8 +704,8 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-chalk font-bold text-sm sm:text-base">{r.name}</p>
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full
-                                           ${r.isCustom ? 'text-sun bg-sun/20' : 'text-soft bg-ink-4'}`}>
-                            {r.isCustom ? 'Custom' : 'Built-in'}
+                                           ${r.isCustom || r.source === 'notion' ? 'text-sun bg-sun/20' : 'text-soft bg-ink-4'}`}>
+                            {r.source === 'notion' ? 'Notion' : r.isCustom ? 'Custom' : 'Built-in'}
                           </span>
                           {!r.enabled && (
                             <span className="text-xs font-bold px-2 py-0.5 rounded-full text-rose-300 bg-ans-a/20">
@@ -555,12 +716,18 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                         <p className="text-soft text-xs mt-0.5">{r.questionCount} questions</p>
                       </div>
 
-                      {/* Toggle */}
-                      <div className="flex-shrink-0" title={r.enabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}>
-                        {toggling === r.id
-                          ? <div className="w-11 h-6 rounded-full bg-ink-4 animate-pulse" />
-                          : <Toggle enabled={r.enabled} onChange={() => handleToggle(r.id)} />}
-                      </div>
+                      {/* Toggle. A Notion round is switched on and off in Notion (its "On" box), not here. */}
+                      {r.source === 'notion' ? (
+                        <span className="flex-shrink-0 text-soft text-xs font-bold text-right max-w-[6rem]">
+                          {r.enabled ? 'On' : 'Off'} in Notion
+                        </span>
+                      ) : (
+                        <div className="flex-shrink-0" title={r.enabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}>
+                          {toggling === r.id
+                            ? <div className="w-11 h-6 rounded-full bg-ink-4 animate-pulse" />
+                            : <Toggle enabled={r.enabled} onChange={() => handleToggle(r.id)} />}
+                        </div>
+                      )}
                     </div>
 
                     {/* Action buttons */}
@@ -584,6 +751,18 @@ export default function RoundsManager({ onClose }: { onClose: () => void }) {
                             {deleting === r.id ? '...' : '🗑 Delete'}
                           </button>
                         </>
+                      ) : r.source === 'notion' ? (
+                        r.notionUrl ? (
+                          <a
+                            href={r.notionUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 min-h-[40px] flex items-center justify-center bg-white/10 hover:bg-white/20
+                                       border border-ink-4 text-chalk font-extrabold text-xs py-2 rounded-xl transition-colors"
+                          >
+                            📝 Edit in Notion ↗
+                          </a>
+                        ) : null
                       ) : (
                         <button
                           onClick={() => openDuplicate(r.id)}

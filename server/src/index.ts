@@ -7,6 +7,7 @@ import path from 'path';
 import GameManager from './GameManager';
 import { rounds as builtInRounds, type Round } from './data/questions';
 import * as customRoundsStore from './data/customRoundsStore';
+import * as notion from './data/notion';
 
 const clientDist = path.resolve(__dirname, '../../client/dist');
 
@@ -48,13 +49,21 @@ function requireAdmin(req: Request, res: Response, next: NextFunction): void {
 }
 
 // ── Rounds REST API ──────────────────────────────────────────────────────────
+// Where a round comes from: the code ('builtin'), the in-app editor ('custom') or Notion ('notion').
+// A Notion round with the same id as another replaces it in place, so once the built-in rounds are copied
+// into Notion they are edited there. Notion also decides whether its rounds are on (the "On" checkbox).
 function allRoundsWithMeta() {
-  const customIds = new Set(customRoundsStore.getCustomRounds().map((r) => r.id));
-  const all = [...builtInRounds, ...customRoundsStore.getCustomRounds()];
-  return all.map((r) => ({
+  type Entry = Round & { source: 'builtin' | 'custom' | 'notion'; notionUrl?: string; notionOn?: boolean };
+  const merged = new Map<string, Entry>();
+  for (const r of builtInRounds) merged.set(r.id, { ...r, source: 'builtin' });
+  for (const r of customRoundsStore.getCustomRounds()) merged.set(r.id, { ...r, source: 'custom' });
+  for (const { enabled, notionUrl, ...r } of notion.getNotionRounds()) {
+    merged.set(r.id, { ...r, source: 'notion', notionUrl, notionOn: enabled });
+  }
+  return [...merged.values()].map(({ notionOn, ...r }) => ({
     ...r,
-    isCustom: customIds.has(r.id),
-    enabled: customRoundsStore.isRoundEnabled(r.id),
+    isCustom: r.source === 'custom',
+    enabled: r.source === 'notion' ? !!notionOn : customRoundsStore.isRoundEnabled(r.id),
   }));
 }
 
@@ -106,8 +115,10 @@ function parseRound(body: unknown, forcedId?: string): Round | null {
 
 // List all rounds (including disabled) for the manager UI. Metadata only, so it is public.
 app.get('/api/rounds', (_req, res) => {
-  res.json(allRoundsWithMeta().map(({ id, name, emoji, description, questions, isCustom, enabled }) => ({
-    id, name, emoji, description, isCustom, enabled,
+  notion.refreshIfStale(); // a host opening a lobby or this list pulls in anything new from Notion (at most once a minute)
+  res.json(allRoundsWithMeta().map(({ id, name, emoji, description, questions, isCustom, enabled, source, notionUrl }) => ({
+    id, name, emoji, description, isCustom, enabled, source,
+    ...(notionUrl ? { notionUrl } : {}),
     questionCount: questions.length,
   })));
 });
@@ -139,8 +150,11 @@ app.put('/api/rounds/:id', requireAdmin, (req, res) => {
 
 // Toggle enabled/disabled
 app.patch('/api/rounds/:id/toggle', requireAdmin, (req, res) => {
-  if (!allRoundsWithMeta().some((r) => r.id === req.params.id)) {
-    res.status(404).json({ error: 'Not found' }); return;
+  const round = allRoundsWithMeta().find((r) => r.id === req.params.id);
+  if (!round) { res.status(404).json({ error: 'Not found' }); return; }
+  if (round.source === 'notion') {
+    res.status(409).json({ error: 'This round is controlled from Notion: tick or untick "On" there.' });
+    return;
   }
   const enabled = customRoundsStore.toggleRound(req.params.id);
   res.json({ success: true, enabled });
@@ -150,6 +164,28 @@ app.patch('/api/rounds/:id/toggle', requireAdmin, (req, res) => {
 app.delete('/api/rounds/:id', requireAdmin, (req, res) => {
   const deleted = customRoundsStore.deleteCustomRound(req.params.id);
   res.json({ success: deleted });
+});
+
+// ── Notion ───────────────────────────────────────────────────────────────────
+// Rounds and questions can be typed into Notion (see the README). The status is public (counts only);
+// syncing and copying the built-in rounds into Notion need the admin password.
+app.get('/api/notion', (_req, res) => {
+  res.json(notion.getStatus());
+});
+
+app.post('/api/notion/sync', requireAdmin, async (_req, res) => {
+  if (!notion.isConfigured()) { res.status(400).json({ error: 'Notion is not connected.' }); return; }
+  const status = await notion.sync();
+  res.status(status.error ? 502 : 200).json({ ...status, warnings: notion.getWarnings() });
+});
+
+app.post('/api/notion/seed', requireAdmin, (_req, res) => {
+  // Every built-in round, switched on or off as it is in the app right now.
+  const items = builtInRounds.map((round) => ({ round, enabled: customRoundsStore.isRoundEnabled(round.id) }));
+  const result = notion.startSeed(items);
+  if (result === 'not-configured') { res.status(400).json({ error: 'Notion is not connected.' }); return; }
+  if (result === 'running') { res.status(409).json({ error: 'Already copying.' }); return; }
+  res.status(202).json(notion.getStatus());
 });
 
 // ── Game settings ────────────────────────────────────────────────────────────
@@ -275,4 +311,5 @@ httpServer.listen(PORT, () => {
   } else {
     console.log('   Rounds API is protected by ADMIN_PASSWORD.\n');
   }
+  notion.start();
 });

@@ -6,7 +6,7 @@ import type { Round } from './questions';
 // Set DATA_DIR to a persistent location in production (e.g. a Railway volume mounted at /data),
 // otherwise the file lives next to the server code and is lost when the container is rebuilt.
 // The default (the server/ folder) is the same whether running from src/ (tsx) or dist/ (tsc).
-const DATA_DIR = process.env.DATA_DIR
+export const DATA_DIR = process.env.DATA_DIR
   ? path.resolve(process.env.DATA_DIR)
   : path.join(__dirname, '../..');
 
