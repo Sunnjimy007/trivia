@@ -29,7 +29,8 @@ export async function startServer(env: Record<string, string> = {}): Promise<Run
     process.execPath,
     ['--import', 'tsx', path.join(__dirname, '../../src/index.ts')],
     {
-      env: { ...process.env, ADMIN_PASSWORD: '', PORT: String(port), ...env },
+      // No "Ready? Go!" pause in tests, so they can answer the moment a question starts.
+      env: { ...process.env, ADMIN_PASSWORD: '', QUESTION_LEAD_IN_MS: '0', PORT: String(port), ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );

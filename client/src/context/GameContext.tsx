@@ -472,9 +472,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     socket.on('question-started', (data: {
       question: Question; questionIndex: number; totalQuestions: number;
       roundIndex: number; roundName: string; roundEmoji: string; startTime: number; timeLimit: number;
-      speedScoring?: boolean;
+      leadInMs?: number; speedScoring?: boolean;
     }) => {
-      dispatch({ type: 'QUESTION_STARTED', ...data });
+      // The question opens after the "Ready? Go!" pause. Count it on this device's own clock, so a phone
+      // whose clock is a little off still gets the full time and shows "Go!" at the right moment.
+      const startTime = typeof data.leadInMs === 'number' ? Date.now() + data.leadInMs : data.startTime;
+      dispatch({ type: 'QUESTION_STARTED', ...data, startTime });
     });
 
     socket.on('answer-confirmed', (data: { optionId: string }) => {

@@ -24,7 +24,7 @@ function setup(getRounds: () => Round[] = () => ROUNDS) {
   const gm = new GameManager(
     (room, event, data) => events.push({ room, event, data }),
     getRounds,
-    { hostGraceMs: 1000, lobbyGraceMs: 500, questionTimeMs: 30000 },
+    { hostGraceMs: 1000, lobbyGraceMs: 500, questionTimeMs: 30000, leadInMs: 0 },
   );
   const last = (name: string) => events.filter((e) => e.event === name).at(-1)?.data;
   const count = (name: string) => events.filter((e) => e.event === name).length;
@@ -74,7 +74,7 @@ describe('GameManager', () => {
     it('gives every right answer the same points in a fair game, and tells the clients', () => {
       const events: Evt[] = [];
       const gm = new GameManager((room, event, data) => events.push({ room, event, data }), () => ROUNDS,
-        { questionTimeMs: 30000, getSpeedScoring: () => false });
+        { questionTimeMs: 30000, leadInMs: 0, getSpeedScoring: () => false });
       const { roomCode, room } = gm.createGame('host-sock', 'Hosty');
       ['Ann', 'Ben', 'Cat'].forEach((name, i) => gm.joinGame(roomCode, `p${i}`, name));
       gm.startGame(roomCode, 'host-sock');
@@ -100,7 +100,7 @@ describe('GameManager', () => {
       let speed = true;
       const events: Evt[] = [];
       const gm = new GameManager((room, event, data) => events.push({ room, event, data }), () => ROUNDS,
-        { questionTimeMs: 30000, getSpeedScoring: () => speed });
+        { questionTimeMs: 30000, leadInMs: 0, getSpeedScoring: () => speed });
       const { roomCode } = gm.createGame('host-sock', 'Hosty');
       ['Ann', 'Ben', 'Cat'].forEach((name, i) => gm.joinGame(roomCode, `p${i}`, name));
 
@@ -115,6 +115,36 @@ describe('GameManager', () => {
 
       const ended = events.filter((e) => e.event === 'question-ended').at(-1)!.data;
       assert.deepEqual(ended.scores.map((s: any) => s.score), [500, 500, 500]);
+    });
+
+    it('holds answers back during the "Ready? Go!" pause, then runs the 30 second clock from the end of it', () => {
+      const events: Evt[] = [];
+      const gm = new GameManager((room, event, data) => events.push({ room, event, data }), () => ROUNDS,
+        { questionTimeMs: 30000, leadInMs: 2200 });
+      const { roomCode, room } = gm.createGame('host-sock', 'Hosty');
+      ['Ann', 'Ben'].forEach((name, i) => gm.joinGame(roomCode, `p${i}`, name));
+      gm.startGame(roomCode, 'host-sock');
+      const before = Date.now();
+      gm.advance(roomCode, 'host-sock');
+
+      // The clients are told how long the pause is, and the clock is set to start after it.
+      const started = events.filter((e) => e.event === 'question-started').at(-1)!.data;
+      assert.equal(started.leadInMs, 2200);
+      assert.ok(started.startTime >= before + 2200);
+      assert.ok(gm.getSnapshot(room, 'p0', false).questionStartTime >= before + 2200);
+
+      // Nobody can answer yet, however quick they are.
+      assert.deepEqual(gm.submitAnswer(roomCode, 'p0', 'B'), { success: false });
+      mock.timers.tick(2199);
+      assert.deepEqual(gm.submitAnswer(roomCode, 'p0', 'B'), { success: false });
+      mock.timers.tick(1);
+      assert.deepEqual(gm.submitAnswer(roomCode, 'p0', 'B'), { success: true });
+
+      // The 30 seconds count from when answers opened, not from when the question was announced.
+      mock.timers.tick(29_999);
+      assert.equal(events.filter((e) => e.event === 'question-ended').length, 0);
+      mock.timers.tick(1);
+      assert.equal(events.filter((e) => e.event === 'question-ended').length, 1);
     });
 
     it('pays by order of correct answers; wrong answers score nothing', () => {

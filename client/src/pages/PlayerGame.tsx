@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import Scoreboard from '../components/Scoreboard';
 import Podium from '../components/Podium';
+import GetReady, { useLeadIn } from '../components/GetReady';
 import Timer from '../components/Timer';
 import Confetti from '../components/Confetti';
 
@@ -45,6 +46,8 @@ const OPTION_CLASSES = ['ans-a', 'ans-b', 'ans-c', 'ans-d'];
 export default function PlayerGame() {
   const { state, submitAnswer, leaveGame } = useGame();
   const { game, myId, myAnswer, lastAdjustment } = state;
+  // "Ready? Go!" before each question opens.
+  const leadIn = useLeadIn(game.questionStartTime, game.phase === 'question_active');
 
   const myAnswerResult = game.answers.find((a) => a.playerId === myId);
   const myPoints = myAnswerResult?.pointsEarned ?? 0;
@@ -101,6 +104,16 @@ export default function PlayerGame() {
 
   // ── Question active ──────────────────────────────────────────────────────
   if (game.phase === 'question_active') {
+    if (leadIn !== 'live') {
+      return (
+        <GetReady
+          stage={leadIn}
+          emoji={game.currentRound?.emoji}
+          questionNumber={game.questionIndex + 1}
+          totalQuestions={game.totalQuestions}
+        />
+      );
+    }
     const hasAnswered = !!myAnswer;
 
     return (

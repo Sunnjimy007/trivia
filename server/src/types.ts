@@ -52,6 +52,9 @@ export interface GameRoom {
   questionStartTime: number;
   timeLimit: number;
   questionTimer: Timer | null;
+  // False during the "Ready? Go!" pause at the start of a question, when answers are not accepted yet.
+  questionOpen: boolean;
+  openTimer: Timer | null;
   correctAnswerOrder: number;
   adjustedPlayerIds: Set<string>;
   // Do faster right answers earn more? Fixed when the game starts (see Settings in customRoundsStore).

@@ -211,7 +211,11 @@ app.use(express.static(clientDist));
 const gameManager = new GameManager(
   (roomCode, event, data) => io.to(roomCode).emit(event, data),
   getAllRounds,
-  { getSpeedScoring: () => customRoundsStore.getSettings().speedScoring },
+  {
+    getSpeedScoring: () => customRoundsStore.getSettings().speedScoring,
+    // QUESTION_LEAD_IN_MS changes the "Ready? Go!" pause before each question (0 turns it off). Mostly for tests.
+    leadInMs: process.env.QUESTION_LEAD_IN_MS?.trim() ? Number(process.env.QUESTION_LEAD_IN_MS) || 0 : undefined,
+  },
 );
 
 // Socket payloads come straight from browsers, so never trust their shape.

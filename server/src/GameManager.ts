@@ -20,11 +20,15 @@ const DEFAULT_LOBBY_GRACE_MS = 30_000;
 
 // With the speed factor off, every right answer is worth this many points, however quick.
 const FLAT_POINTS = 500;
+// The "Ready? ... Go!" pause before each question: answers are closed and the 30 second clock has not started.
+const DEFAULT_LEAD_IN_MS = 2200;
 
 export interface GameManagerOptions {
   hostGraceMs?: number;
   lobbyGraceMs?: number;
   questionTimeMs?: number;
+  // How long the "Ready? Go!" pause lasts before a question opens. 0 opens it straight away.
+  leadInMs?: number;
   // Whether faster right answers earn more. Read when a game starts, so changing it mid-game changes nothing.
   getSpeedScoring?: () => boolean;
 }
@@ -109,6 +113,7 @@ class GameManager {
   private hostGraceMs: number;
   private lobbyGraceMs: number;
   private questionTimeMs: number;
+  private leadInMs: number;
   private getSpeedScoring: () => boolean;
 
   constructor(
@@ -121,6 +126,7 @@ class GameManager {
     this.hostGraceMs = options.hostGraceMs ?? DEFAULT_HOST_GRACE_MS;
     this.lobbyGraceMs = options.lobbyGraceMs ?? DEFAULT_LOBBY_GRACE_MS;
     this.questionTimeMs = options.questionTimeMs ?? QUESTION_TIME_LIMIT;
+    this.leadInMs = Math.max(0, options.leadInMs ?? DEFAULT_LEAD_IN_MS);
     this.getSpeedScoring = options.getSpeedScoring ?? (() => true);
   }
 
@@ -152,6 +158,8 @@ class GameManager {
       questionStartTime: 0,
       timeLimit: this.questionTimeMs,
       questionTimer: null,
+      questionOpen: false,
+      openTimer: null,
       correctAnswerOrder: 0,
       adjustedPlayerIds: new Set(),
       speedScoring: this.getSpeedScoring(),
@@ -254,12 +262,24 @@ class GameManager {
     room.answers = [];
     room.answerDistribution = emptyDistribution();
     room.correctAnswerOrder = 0;
-    room.questionStartTime = Date.now();
+    // questionStartTime is when answers open and the clock starts: after the "Ready? Go!" pause.
+    room.questionStartTime = Date.now() + this.leadInMs;
+
+    // Nobody can answer until the pause is over, so being quick to the screen earns nothing.
+    if (room.openTimer) clearTimeout(room.openTimer);
+    room.openTimer = null;
+    room.questionOpen = this.leadInMs <= 0;
+    if (!room.questionOpen) {
+      room.openTimer = setTimeout(() => {
+        room.openTimer = null;
+        if (room.phase === 'question_active') room.questionOpen = true;
+      }, this.leadInMs);
+    }
 
     if (room.questionTimer) clearTimeout(room.questionTimer);
     room.questionTimer = setTimeout(() => {
       if (room.phase === 'question_active') this.endQuestion(room);
-    }, this.questionTimeMs);
+    }, this.leadInMs + this.questionTimeMs);
 
     const rounds = room.rounds;
     const question = getQuestionForClient(rounds, room.currentRoundIndex, room.currentQuestionIndex);
@@ -274,6 +294,7 @@ class GameManager {
       roundEmoji: roundInfo.emoji,
       startTime: room.questionStartTime,
       timeLimit: this.questionTimeMs,
+      leadInMs: this.leadInMs,
       speedScoring: room.speedScoring,
     });
   }
@@ -285,6 +306,7 @@ class GameManager {
   ): { success: boolean; alreadyAnswered?: boolean } {
     const room = this.rooms.get(roomCode);
     if (!room || room.phase !== 'question_active') return { success: false };
+    if (!room.questionOpen) return { success: false }; // still in the "Ready? Go!" pause
 
     // Host cannot answer questions
     if (playerId === room.hostId) return { success: false };
@@ -357,6 +379,11 @@ class GameManager {
       clearTimeout(room.questionTimer);
       room.questionTimer = null;
     }
+    if (room.openTimer) {
+      clearTimeout(room.openTimer);
+      room.openTimer = null;
+    }
+    room.questionOpen = false;
     room.phase = 'question_results';
 
     const currentQuestion = room.rounds[room.currentRoundIndex].questions[room.currentQuestionIndex];
@@ -597,6 +624,7 @@ class GameManager {
     const room = this.rooms.get(roomCode);
     if (room) {
       if (room.questionTimer) clearTimeout(room.questionTimer);
+      if (room.openTimer) clearTimeout(room.openTimer);
       if (room.hostGraceTimer) clearTimeout(room.hostGraceTimer);
       for (const timer of room.lobbyGraceTimers.values()) clearTimeout(timer);
     }

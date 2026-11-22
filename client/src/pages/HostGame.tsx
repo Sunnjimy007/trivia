@@ -3,6 +3,7 @@ import { useGame } from '../context/GameContext';
 import Timer from '../components/Timer';
 import Confetti from '../components/Confetti';
 import Podium from '../components/Podium';
+import GetReady, { useLeadIn } from '../components/GetReady';
 import type { PlayerScore } from '../types';
 
 const OPTION_STYLES = [
@@ -204,6 +205,8 @@ function HostAdvance({
 export default function HostGame() {
   const { state, advance, adjustScore, leaveGame } = useGame();
   const { game, players, answeredCount, answerDistribution, myName, lastAdjustment, adjustedPlayerIds } = state;
+  // The same "Ready? Go!" pause as on the phones, so the question isn't read off the big screen early.
+  const leadIn = useLeadIn(game.questionStartTime, game.phase === 'question_active');
 
   // ── Round Intro ─────────────────────────────────────────────────────────
   if (game.phase === 'round_intro') {
@@ -265,6 +268,16 @@ export default function HostGame() {
 
   // ── Question Active ──────────────────────────────────────────────────────
   if (game.phase === 'question_active') {
+    if (leadIn !== 'live') {
+      return (
+        <GetReady
+          stage={leadIn}
+          emoji={game.currentRound?.emoji}
+          questionNumber={game.questionIndex + 1}
+          totalQuestions={game.totalQuestions}
+        />
+      );
+    }
     const totalPlayers = players.length;
     const progressPct = totalPlayers > 0 ? (answeredCount / totalPlayers) * 100 : 0;
 
